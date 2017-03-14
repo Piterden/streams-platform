@@ -32,12 +32,12 @@ class FieldFormSections
                                 function ($field) {
 
                                     // No config fields.
-                                    if (starts_with($field['field'], 'config.')) {
+                                    if (starts_with($field['field'], 'config__')) {
                                         return false;
                                     }
 
                                     // Only default locale fields.
-                                    if (isset($field['locale']) && $field['locale'] !== config('app.fallback_locale')) {
+                                    if (isset($field['locale']) && $field['locale'] !== config('streams::locales.default')) {
                                         return false;
                                     }
 
@@ -69,7 +69,7 @@ class FieldFormSections
                                     function ($field) {
 
                                         // Only config fields.
-                                        if (!starts_with($field['field'], 'config.')) {
+                                        if (!starts_with($field['field'], 'config__')) {
                                             return false;
                                         }
 

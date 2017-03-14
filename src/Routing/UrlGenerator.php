@@ -5,7 +5,6 @@ use Anomaly\Streams\Platform\Support\Presenter;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\RouteCollection;
-use Illuminate\Support\Str;
 use StringTemplate\Engine;
 
 /**
@@ -128,9 +127,11 @@ class UrlGenerator extends \Illuminate\Routing\UrlGenerator
             $entry = $entry->toArray();
         }
 
-        return '/' . $this->addQueryString(
-            $this->parser->render(str_replace('?}', '}', $route->uri()), $entry),
-            $parameters
+        return $this->to(
+            $this->addQueryString(
+                $this->parser->render(str_replace('?}', '}', $route->uri()), $entry),
+                $parameters
+            )
         );
     }
 
@@ -146,6 +147,10 @@ class UrlGenerator extends \Illuminate\Routing\UrlGenerator
      */
     public function route($name, $parameters = [], $absolute = true)
     {
+        if (!$route = $this->routes->getByName($name)) {
+            return null;
+        }
+
         $route = parent::route($name, $parameters, $absolute);
 
         if (!array_filter($parameters)) {
@@ -153,5 +158,16 @@ class UrlGenerator extends \Illuminate\Routing\UrlGenerator
         }
 
         return $route;
+    }
+
+    /**
+     * Return if the route exists.
+     *
+     * @param $name
+     * @return bool
+     */
+    public function hasRoute($name)
+    {
+        return (bool)$this->routes->getByName($name);
     }
 }

@@ -504,13 +504,29 @@ class FieldType extends Addon
     }
 
     /**
+     * Get the value for repopulating
+     * field after failed validation.
+     *
+     * @param  null $default
+     * @return mixed
+     */
+    public function getRepopulateValue($default = null)
+    {
+        return $this->getPostValue($default);
+    }
+
+    /**
      * Return if any posted input exists.
      *
      * @return bool
      */
     public function hasPostedInput()
     {
-        return isset($_POST[str_replace('.', '_', $this->getInputName())]);
+        if (!isset($_POST[str_replace('.', '_', $this->getInputName())])) {
+            return isset($_FILES[str_replace('.', '_', $this->getInputName())]);
+        }
+
+        return true;
     }
 
     /**
@@ -690,6 +706,20 @@ class FieldType extends Addon
     }
 
     /**
+     * Add an attribute.
+     *
+     * @param $attribute
+     * @param $value
+     * @return $this
+     */
+    public function addAttribute($attribute, $value)
+    {
+        $this->attributes[$attribute] = $value;
+
+        return $this;
+    }
+
+    /**
      * Get the suffix.
      *
      * @return null|string
@@ -820,6 +850,16 @@ class FieldType extends Addon
     public function getColumnName()
     {
         return $this->field;
+    }
+
+    /**
+     * Get the column name.
+     *
+     * @return string
+     */
+    public function getUniqueColumnName()
+    {
+        return $this->getColumnName();
     }
 
     /**

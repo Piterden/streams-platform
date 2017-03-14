@@ -31,7 +31,7 @@ class Str extends \Illuminate\Support\Str
      * https://github.com/laravel/framework/pull/3547/files
      *
      * @param  string $value
-     * @param  int $limit
+     * @param  int    $limit
      * @param  string $end
      * @return string
      */
@@ -61,12 +61,23 @@ class Str extends \Illuminate\Support\Str
     /**
      * Linkify the provided text.
      *
-     * @param $text
+     * @param       $text
      * @param array $options
      * @return string
      */
     public function linkify($text, array $options = [])
     {
         return (new Linkify($options))->process($text);
+    }
+
+    /**
+     * Return purified HTML.
+     *
+     * @param $html
+     * @return string
+     */
+    public function purify($html)
+    {
+        return app(Purifier::class)->purify($html);
     }
 }

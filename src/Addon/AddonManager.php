@@ -67,11 +67,11 @@ class AddonManager
     /**
      * Create a new AddonManager instance.
      *
-     * @param AddonPaths $paths
-     * @param AddonLoader $loader
-     * @param ModuleModel $modules
-     * @param Dispatcher $dispatcher
-     * @param ExtensionModel $extensions
+     * @param AddonPaths      $paths
+     * @param AddonLoader     $loader
+     * @param ModuleModel     $modules
+     * @param Dispatcher      $dispatcher
+     * @param ExtensionModel  $extensions
      * @param AddonIntegrator $integrator
      * @param AddonCollection $addons
      */
@@ -118,7 +118,15 @@ class AddonManager
          * that they're all PSR autoloaded.
          */
         foreach ($paths as $path) {
-            $this->integrator->register($path, $enabled, $installed);
+
+            $namespace = $this->getAddonNamespace($path);
+
+            $this->integrator->register(
+                $path,
+                $namespace,
+                in_array($namespace, $enabled),
+                in_array($namespace, $installed)
+            );
         }
 
         // Sort all addons.
@@ -143,13 +151,25 @@ class AddonManager
      */
     protected function getEnabledAddonNamespaces()
     {
-        if (env('INSTALLED')) {
-            $modules    = $this->modules->getEnabledNamespaces()->all();
-            $extensions = $this->extensions->getEnabledNamespaces()->all();
-        } else {
-            $modules    = [];
-            $extensions = [];
+        if (!env('INSTALLED')) {
+            return [];
         }
+
+        $modules = $this->modules->cache(
+            'streams::modules.enabled',
+            9999,
+            function () {
+                return $this->modules->getEnabledNamespaces()->all();
+            }
+        );
+
+        $extensions = $this->extensions->cache(
+            'streams::extensions.enabled',
+            9999,
+            function () {
+                return $this->extensions->getEnabledNamespaces()->all();
+            }
+        );
 
         return array_merge($modules, $extensions);
     }
@@ -161,14 +181,41 @@ class AddonManager
      */
     protected function getInstalledAddonNamespaces()
     {
-        if (env('INSTALLED')) {
-            $modules    = $this->modules->getInstalledNamespaces()->all();
-            $extensions = $this->extensions->getInstalledNamespaces()->all();
-        } else {
-            $modules    = [];
-            $extensions = [];
+        if (!env('INSTALLED')) {
+            return [];
         }
 
+        $modules = $this->modules->cache(
+            'streams::modules.installed',
+            9999,
+            function () {
+                return $this->modules->getInstalledNamespaces()->all();
+            }
+        );
+
+        $extensions = $this->extensions->cache(
+            'streams::extensions.installed',
+            9999,
+            function () {
+                return $this->extensions->getInstalledNamespaces()->all();
+            }
+        );
+
         return array_merge($modules, $extensions);
+    }
+
+    /**
+     * Get the addon namespace.
+     *
+     * @param $path
+     * @return string
+     */
+    protected function getAddonNamespace($path)
+    {
+        $vendor = strtolower(basename(dirname($path)));
+        $slug   = strtolower(substr(basename($path), 0, strpos(basename($path), '-')));
+        $type   = strtolower(substr(basename($path), strpos(basename($path), '-') + 1));
+
+        return "{$vendor}.{$type}.{$slug}";
     }
 }

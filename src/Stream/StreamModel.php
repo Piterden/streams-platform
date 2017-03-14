@@ -88,7 +88,7 @@ class StreamModel extends EloquentModel implements StreamInterface, PresentableI
     /**
      * Make a Stream instance from the provided compile data.
      *
-     * @param  array           $data
+     * @param  array $data
      * @return StreamInterface
      */
     public function make(array $data)
@@ -206,12 +206,34 @@ class StreamModel extends EloquentModel implements StreamInterface, PresentableI
     }
 
     /**
+     * Fire field type events.
+     *
+     * @param       $trigger
+     * @param array $payload
+     */
+    public function fireFieldTypeEvents($trigger, $payload = [])
+    {
+        $assignments = $this->getAssignments();
+
+        /* @var AssignmentInterface $assignment */
+        foreach ($assignments->notTranslatable() as $assignment) {
+
+            $fieldType = $assignment->getFieldType();
+
+            $payload['stream']    = $this;
+            $payload['fieldType'] = $fieldType;
+
+            $fieldType->fire($trigger, $payload);
+        }
+    }
+
+    /**
      * Because the stream record holds translatable data
      * we have a conflict. The streams table has translations
      * but not all streams are translatable. This helps avoid
      * the translatable conflict during specific procedures.
      *
-     * @param  array  $attributes
+     * @param  array $attributes
      * @return static
      */
     public static function create(array $attributes = [])
@@ -286,8 +308,8 @@ class StreamModel extends EloquentModel implements StreamInterface, PresentableI
     /**
      * Get the config.
      *
-     * @param  null  $key
-     * @param  null  $default
+     * @param  null $key
+     * @param  null $default
      * @return mixed
      */
     public function getConfig($key = null, $default = null)
@@ -313,7 +335,7 @@ class StreamModel extends EloquentModel implements StreamInterface, PresentableI
      */
     public function mergeConfig(array $config)
     {
-        $this->config = array_merge($this->config, $config);
+        $this->config = array_merge((array)$this->config, $config);
 
         return $this;
     }
@@ -411,7 +433,7 @@ class StreamModel extends EloquentModel implements StreamInterface, PresentableI
     /**
      * Get the field slugs for assigned fields.
      *
-     * @param  null  $prefix
+     * @param  null $prefix
      * @return array
      */
     public function getAssignmentFieldSlugs($prefix = null)

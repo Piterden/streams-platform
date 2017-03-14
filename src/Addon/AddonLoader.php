@@ -53,7 +53,9 @@ class AddonLoader
             return;
         }
 
-        $composer = json_decode(file_get_contents($path . '/composer.json'), true);
+        if (!$composer = json_decode(file_get_contents($path . '/composer.json'), true)) {
+            throw new \Exception("A JSON syntax error was encountered in {$path}/composer.json");
+        };
 
         if (!array_key_exists('autoload', $composer)) {
             return;

@@ -72,6 +72,13 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
     ];
 
     /**
+     * The cascading delete-able relations.
+     *
+     * @var array
+     */
+    protected $cascades = [];
+
+    /**
      * Runtime cache.
      *
      * @var array
@@ -99,14 +106,26 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
     }
 
     /**
-     * Alias for $this->setTtl($ttl)
+     * Cache a value in the
+     * model's cache collection.
      *
+     * @param $key
      * @param $ttl
-     * @return EloquentModel
+     * @param $value
+     * @return mixed
      */
-    public function cache($ttl)
+    public function cache($key, $ttl, $value)
     {
-        return $this->setTtl($ttl);
+        (new CacheCollection())
+            ->make([$key])
+            ->setKey($this->getCacheCollectionKey())
+            ->index();
+
+        return app('cache')->remember(
+            $key,
+            $ttl ?: $this->getTtl(),
+            $value
+        );
     }
 
     /**
@@ -260,7 +279,7 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
      */
     public function isForceDeleting()
     {
-        return isset($this->forceDeleting) && $this->forceDeleting == true;
+        return isset($this->forceDeleting) && $this->forceDeleting === true;
     }
 
     /**
@@ -270,7 +289,9 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
      */
     public function flushCache()
     {
-        (new CacheCollection())->setKey($this->getCacheCollectionKey())->flush();
+        (new CacheCollection())->setKey($key = $this->getCacheCollectionKey())->flush();
+
+        EloquentQueryBuilder::dropRuntimeCache($key);
 
         return $this;
     }
@@ -325,21 +346,42 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
     }
 
     /**
-     * @param  null $locale
+     * @param  null      $locale
      * @param  bool|null $withFallback
      * @return Model|null
      */
-    public function getTranslation($locale = null, $withFallback = false)
+    public function getTranslation($locale = null, $withFallback = true)
     {
-        $locale = $locale ?: $this->getFallbackLocale();
 
-        if ($translation = $this->getTranslationByLocaleKey($locale)) {
+        /**
+         * If we have a desired locale and
+         * it exists then just use that locale.
+         */
+        if ($locale && $translation = $this->getTranslationByLocaleKey($locale)) {
             return $translation;
-        } elseif ($withFallback
+        }
+
+        /**
+         * If we don't have a locale or it doesn't exist
+         * then go ahead and try using a fallback in using
+         * the system's designated DEFAULT (not active) locale.
+         */
+        if ($withFallback
+            && $translation = $this->getTranslationByLocaleKey($this->getDefaultLocale())
+        ) {
+            return $translation;
+        }
+
+        /**
+         * If we still don't have a translation then
+         * try looking up the FALLBACK translation.
+         */
+        if ($withFallback
             && $this->getFallbackLocale()
             && $this->getTranslationByLocaleKey($this->getFallbackLocale())
+            && $translation = $this->getTranslationByLocaleKey($this->getFallbackLocale())
         ) {
-            return $this->getTranslationByLocaleKey($this->getFallbackLocale());
+            return $translation;
         }
 
         return null;
@@ -397,6 +439,16 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
         return get_class($this) . 'Translation';
     }
 
+    /**
+     * Return translated attributes.
+     *
+     * @return array
+     */
+    public function getTranslatedAttributes()
+    {
+        return $this->translatedAttributes;
+    }
+
     public function getRelationKey()
     {
         return $this->translationForeignKey ?: $this->getForeignKey();
@@ -415,11 +467,10 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
     public function getAttribute($key)
     {
         if ($this->isTranslatedAttribute($key)) {
-            if ($this->getTranslation() === null) {
+
+            if (($translation = $this->getTranslation()) === null) {
                 return null;
             }
-
-            $translation = $this->getTranslation();
 
             $translation->setRelation('parent', $this);
 
@@ -433,7 +484,7 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
      * Set an attribute.
      *
      * @param  string $key
-     * @param  mixed $value
+     * @param  mixed  $value
      * @return $this
      */
     public function setAttribute($key, $value)
@@ -664,10 +715,24 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
     public function getUnguardedAttributes()
     {
         foreach ($attributes = $this->getAttributes() as $attribute => $value) {
-            $attributes[$attribute] = $this->{$attribute};
+            $attributes[$attribute] = $value;
         }
 
         return array_diff_key($attributes, array_flip($this->getGuarded()));
+    }
+
+    /**
+     * Get the default locale.
+     *
+     * @return string
+     */
+    protected function getDefaultLocale()
+    {
+        if (isset($this->cache['default_locale'])) {
+            return $this->cache['default_locale'];
+        }
+
+        return $this->cache['default_locale'] = config('streams::locales.default');
     }
 
     /**
@@ -756,6 +821,16 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
         $criteria = substr(get_class($this), 0, -5) . 'Criteria';
 
         return class_exists($criteria) ? $criteria : EloquentCriteria::class;
+    }
+
+    /**
+     * Get the cascading actions.
+     *
+     * @return array
+     */
+    public function getCascades()
+    {
+        return $this->cascades;
     }
 
     public function __get($key)

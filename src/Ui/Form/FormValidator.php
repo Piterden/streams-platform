@@ -5,10 +5,19 @@ use Anomaly\Streams\Platform\Ui\Form\Command\SetErrorMessages;
 use Anomaly\Streams\Platform\Ui\Form\Event\FormWasValidated;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Bus\DispatchesJobs;
+use Illuminate\Support\MessageBag;
 use Illuminate\Validation\Validator;
 
+/**
+ * Class FormValidator
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class FormValidator
 {
+
     use DispatchesJobs;
 
     /**
@@ -88,13 +97,15 @@ class FormValidator
     {
         $factory = app('validator');
 
+        $builder->setFormErrors(new MessageBag());
+
         $this->extender->extend($factory, $builder);
 
         $input      = $this->input->all($builder);
         $messages   = $this->messages->make($builder);
         $attributes = $this->attributes->make($builder);
         $rules      = $this->rules->compile($builder);
-        
+
         /* @var Validator $validator */
         $validator = $factory->make($input, $rules);
 
@@ -115,6 +126,7 @@ class FormValidator
     protected function setResponse(Validator $validator, FormBuilder $builder)
     {
         if (!$validator->passes()) {
+
             $builder->setSave(false);
 
             $bag = $validator->getMessageBag();

@@ -40,7 +40,6 @@ class FormController extends PublicController
             ->getFormResponse();
 
         $builder->flash();
-        $cache->forget('form::' . $key);
 
         if ($response && $response->getStatusCode() !== 200) {
             return $response;

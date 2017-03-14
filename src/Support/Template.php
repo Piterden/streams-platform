@@ -59,7 +59,7 @@ class Template
      */
     public function render($template, array $payload = [])
     {
-        $view = 'templates/' . md5($template);
+        $view = 'support/parsed/' . md5($template);
         $path = $this->application->getStoragePath($view);
 
         if (!$this->files->isDirectory($directory = dirname($path))) {
@@ -71,7 +71,6 @@ class Template
         }
 
         return $this->view
-            ->make('storage::' . $view, $payload)
-            ->render();
+            ->make('storage::' . $view, $payload);
     }
 }

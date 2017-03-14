@@ -45,7 +45,7 @@ class StreamFormFields
                         'max'     => 60,
                     ],
                     'rules'        => [
-                        'unique' => 'streams_streams,slug,' . $id . ',id,namespace,' . $namespace,
+                        'unique' => 'streams_streams,slug,' . (int)$id . ',id,namespace,' . $namespace,
                     ],
                 ],
                 'description'  => [
@@ -78,15 +78,6 @@ class StreamFormFields
                     'instructions' => 'streams::field.searchable.instructions',
                     'translatable' => true,
                     'type'         => 'anomaly.field_type.boolean',
-                ],
-                'config'       => [
-                    'label'        => 'streams::field.config.name',
-                    'instructions' => 'streams::field.config.instructions',
-                    'translatable' => true,
-                    'type'         => 'anomaly.field_type.editor',
-                    'config'       => [
-                        'mode' => 'json',
-                    ],
                 ],
                 'title_column' => [
                     'label'        => 'streams::field.title_column.name',

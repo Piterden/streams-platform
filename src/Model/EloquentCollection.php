@@ -1,8 +1,16 @@
 <?php namespace Anomaly\Streams\Platform\Model;
 
+use Anomaly\Streams\Platform\Support\Decorator;
 use Anomaly\Streams\Platform\Traits\Hookable;
 use Illuminate\Database\Eloquent\Collection;
 
+/**
+ * Class EloquentCollection
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class EloquentCollection extends Collection
 {
 
@@ -27,13 +35,24 @@ class EloquentCollection extends Collection
     {
         $items = [];
 
-        $decorator = app('Robbo\Presenter\Decorator');
+        /* @var Decorator $decorator */
+        $decorator = app(Decorator::class);
 
         foreach ($this->items as $item) {
             $items[] = $decorator->decorate($item);
         }
 
         return self::make($items);
+    }
+
+    /**
+     * Return undecorated items.
+     *
+     * @return static|$this
+     */
+    public function undecorated()
+    {
+        return $this->undecorate();
     }
 
     /**
@@ -69,9 +88,28 @@ class EloquentCollection extends Collection
      */
     public function findBy($key, $value)
     {
-        return $this->first(
+        return $this->undecorated()->first(
             function ($entry) use ($key, $value) {
                 return $entry->{$key} === $value;
+            }
+        );
+    }
+
+    /**
+     * Find a model by key.
+     *
+     * @param $key
+     * @param $value
+     * @return static|$this
+     */
+    public function filterBy($key, $value)
+    {
+        /* @var Decorator $decorator */
+        $decorator = app(Decorator::class);
+
+        return $this->filter(
+            function ($entry) use ($key, $value, $decorator) {
+                return $decorator->undecorate($entry)->{$key} === $value;
             }
         );
     }
@@ -85,6 +123,16 @@ class EloquentCollection extends Collection
     public function skip($offset)
     {
         return $this->slice($offset, null, true);
+    }
+
+    /**
+     * Return undecorated items.
+     *
+     * @return static|$this
+     */
+    public function undecorate()
+    {
+        return new static((new Decorator())->undecorate($this->items));
     }
 
     /**
@@ -114,6 +162,10 @@ class EloquentCollection extends Collection
      */
     public function __call($method, $parameters)
     {
+        if (self::hasMacro($method)) {
+            return parent::__call($method, $parameters);
+        }
+
         if ($this->hasHook($hook = snake_case($method))) {
             return $this->call($hook, $parameters);
         }

@@ -535,6 +535,19 @@ class FormBuilder
     }
 
     /**
+     * Merge in skipped fields.
+     *
+     * @param array $skips
+     * @return $this
+     */
+    public function mergeSkips(array $skips)
+    {
+        $this->skips = array_merge($this->skips, $skips);
+
+        return $this;
+    }
+
+    /**
      * Add a skipped field.
      *
      * @param $fieldSlug
@@ -675,11 +688,19 @@ class FormBuilder
      *
      * @param        $slug
      * @param  array $section
+     * @param null $position
      * @return $this
      */
-    public function addSection($slug, array $section)
+    public function addSection($slug, array $section, $position = null)
     {
-        array_set($this->sections, $slug, $section);
+        if ($position === null) {
+            $position = count($this->sections) + 1;
+        }
+
+        $front = array_slice($this->sections, 0, $position, true);
+        $back  = array_slice($this->sections, $position, count($this->sections) - $position, true);
+
+        $this->sections = $front + [$slug => $section] + $back;
 
         return $this;
     }
@@ -690,11 +711,23 @@ class FormBuilder
      * @param        $section
      * @param        $slug
      * @param  array $tab
+     * @param null $position
      * @return $this
      */
-    public function addSectionTab($section, $slug, array $tab)
+    public function addSectionTab($section, $slug, array $tab, $position = null)
     {
-        array_set($this->sections, "{$section}.tabs.{$slug}", $tab);
+        $tabs = (array)array_get($this->sections, "{$section}.tabs");
+
+        if ($position === null) {
+            $position = count($tabs) + 1;
+        }
+
+        $front = array_slice($tabs, 0, $position, true);
+        $back  = array_slice($tabs, $position, count($tabs) - $position, true);
+
+        $tabs = $front + [$slug => $tab] + $back;
+
+        array_set($this->sections, "{$section}.tabs", $tabs);
 
         return $this;
     }
@@ -954,6 +987,20 @@ class FormBuilder
     }
 
     /**
+     * Add form data.
+     *
+     * @param $key
+     * @param $value
+     * @return $this
+     */
+    public function addFormData($key, $value)
+    {
+        $this->form->addData($key, $value);
+
+        return $this;
+    }
+
+    /**
      * Ge the form response.
      *
      * @return null|Response
@@ -1038,11 +1085,13 @@ class FormBuilder
      * Disable a form field.
      *
      * @param $fieldSlug
-     * @return FieldType
+     * @return $this
      */
     public function disableFormField($fieldSlug)
     {
-        return $this->form->disableField($fieldSlug);
+        $this->form->disableField($fieldSlug);
+
+        return $this;
     }
 
     /**
@@ -1269,6 +1318,18 @@ class FormBuilder
         }
 
         return false;
+    }
+
+    /**
+     * Return whether any post data exists.
+     *
+     * @return array
+     */
+    public function getPostData()
+    {
+        $fields = $this->getFormFieldSlugs($this->getOption('prefix'));
+
+        return array_intersect_key($_POST, array_flip($fields));
     }
 
     /**

@@ -10,6 +10,7 @@ use Anomaly\Streams\Platform\Field\Contract\FieldInterface;
 use Anomaly\Streams\Platform\Model\EloquentModel;
 use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
 use Carbon\Carbon;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Laravel\Scout\ModelObserver;
 use Laravel\Scout\Searchable;
@@ -382,7 +383,7 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
     public function getAttribute($key)
     {
         // Check if it's a relationship first.
-        if (in_array($key, $this->relationships)) {
+        if (in_array($key, array_merge($this->relationships, ['created_by', 'updated_by']))) {
             return parent::getAttribute(camel_case($key));
         }
 
@@ -621,6 +622,46 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
     }
 
     /**
+     * Return the related creator.
+     *
+     * @return Authenticatable
+     */
+    public function getCreatedBy()
+    {
+        return $this->created_by;
+    }
+
+    /**
+     * Return the creator relation.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function createdBy()
+    {
+        return $this->belongsTo(config('auth.providers.users.model'));
+    }
+
+    /**
+     * Return the related updater.
+     *
+     * @return Authenticatable
+     */
+    public function getUpdatedBy()
+    {
+        return $this->updated_by;
+    }
+
+    /**
+     * Return the updater relation.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function updatedBy()
+    {
+        return $this->belongsTo(config('auth.providers.users.model'));
+    }
+
+    /**
      * Return whether the title column is
      * translatable or not.
      *
@@ -671,7 +712,7 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
         foreach ($assignments->notTranslatable() as $assignment) {
             $fieldType = $assignment->getFieldType();
 
-            $fieldType->setValue($this->getFieldValue($assignment->getFieldSlug()));
+            $fieldType->setValue($this->getRawAttribute($assignment->getFieldSlug()));
 
             $fieldType->setEntry($this);
 

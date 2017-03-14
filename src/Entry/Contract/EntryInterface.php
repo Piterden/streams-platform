@@ -135,6 +135,13 @@ interface EntryInterface
     public function getTranslationsTableName();
 
     /**
+     * Get the translated attributes.
+     *
+     * @return array
+     */
+    public function getTranslatedAttributes();
+
+    /**
      * Get a field by it's slug.
      *
      * @param  $slug
@@ -155,7 +162,7 @@ interface EntryInterface
      * Get a field value.
      *
      * @param        $fieldSlug
-     * @param  null $locale
+     * @param  null  $locale
      * @return mixed
      */
     public function getFieldValue($fieldSlug, $locale = null);
@@ -165,7 +172,7 @@ interface EntryInterface
      *
      * @param        $fieldSlug
      * @param        $value
-     * @param  null $locale
+     * @param  null  $locale
      * @return $this
      */
     public function setFieldValue($fieldSlug, $value, $locale = null);
@@ -412,7 +419,7 @@ interface EntryInterface
      * Get a raw unmodified attribute.
      *
      * @param             $key
-     * @param  bool $process
+     * @param  bool       $process
      * @return mixed|null
      */
     public function getRawAttribute($key, $process = true);
@@ -432,6 +439,17 @@ interface EntryInterface
      * @return array
      */
     public function getAttributes();
+
+    /**
+     * Cache a value in the
+     * model's cache collection.
+     *
+     * @param $key
+     * @param $ttl
+     * @param $value
+     * @return mixed
+     */
+    public function cache($key, $ttl, $value);
 
     /**
      * Flush the entry model's cache.
@@ -468,6 +486,13 @@ interface EntryInterface
      * @param array $payload
      */
     public function fireFieldTypeEvents($trigger, $payload = []);
+
+    /**
+     * Get the cascading actions.
+     *
+     * @return array
+     */
+    public function getCascades();
 
     /**
      * Call a hook.

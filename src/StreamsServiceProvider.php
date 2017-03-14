@@ -1,6 +1,8 @@
 <?php namespace Anomaly\Streams\Platform;
 
 use Anomaly\Streams\Platform\Addon\AddonManager;
+use Anomaly\Streams\Platform\Addon\Theme\Command\LoadCurrentTheme;
+use Anomaly\Streams\Platform\Application\Command\ConfigureFileCacheStore;
 use Anomaly\Streams\Platform\Application\Command\ConfigureTranslator;
 use Anomaly\Streams\Platform\Application\Command\ConfigureUriValidator;
 use Anomaly\Streams\Platform\Application\Command\InitializeApplication;
@@ -42,6 +44,13 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\ServiceProvider;
 
+/**
+ * Class StreamsServiceProvider
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class StreamsServiceProvider extends ServiceProvider
 {
 
@@ -114,6 +123,7 @@ class StreamsServiceProvider extends ServiceProvider
         'Illuminate\Contracts\Debug\ExceptionHandler'                                    => 'Anomaly\Streams\Platform\Exception\ExceptionHandler',
         'Illuminate\Routing\UrlGenerator'                                                => 'Anomaly\Streams\Platform\Routing\UrlGenerator',
         'Illuminate\Contracts\Routing\UrlGenerator'                                      => 'Anomaly\Streams\Platform\Routing\UrlGenerator',
+        'GrahamCampbell\Exceptions\Displayers\ViewDisplayer'                             => 'Anomaly\Streams\Platform\Exception\Displayer\ViewDisplayer',
         'Anomaly\Streams\Platform\Entry\EntryModel'                                      => 'Anomaly\Streams\Platform\Entry\EntryModel',
         'Anomaly\Streams\Platform\Entry\Contract\EntryRepositoryInterface'               => 'Anomaly\Streams\Platform\Entry\EntryRepository',
         'Anomaly\Streams\Platform\Field\FieldModel'                                      => 'Anomaly\Streams\Platform\Field\FieldModel',
@@ -193,6 +203,7 @@ class StreamsServiceProvider extends ServiceProvider
         'Anomaly\Streams\Platform\View\Listener\LoadTemplateData'                            => 'Anomaly\Streams\Platform\View\Listener\LoadTemplateData',
         'Anomaly\Streams\Platform\View\Listener\DecorateData'                                => 'Anomaly\Streams\Platform\View\Listener\DecorateData',
         'Anomaly\Streams\Platform\Support\Template'                                          => 'Anomaly\Streams\Platform\Support\Template',
+        'Anomaly\Streams\Platform\Support\Purifier'                                          => 'Anomaly\Streams\Platform\Support\Purifier',
     ];
 
     /**
@@ -202,21 +213,21 @@ class StreamsServiceProvider extends ServiceProvider
     {
         $events->fire(new Booting());
 
-        // First load our app environment.
-        $this->dispatch(new LoadEnvironmentOverrides());
-
         // Next take care of core utilities.
         $this->dispatch(new SetCoreConnection());
         $this->dispatch(new ConfigureUriValidator());
         $this->dispatch(new InitializeApplication());
 
+        // Load application specific .env file.
+        $this->dispatch(new LoadEnvironmentOverrides());
+
         // Setup and preparing utilities.
         $this->dispatch(new LoadStreamsConfiguration());
+        $this->dispatch(new ConfigureFileCacheStore());
         $this->dispatch(new ConfigureTranslator());
         $this->dispatch(new AutoloadEntryModels());
         $this->dispatch(new AddAssetNamespaces());
         $this->dispatch(new AddImageNamespaces());
-        $this->dispatch(new AddViewNamespaces());
         $this->dispatch(new ConfigureScout());
 
         // Observe our base models.
@@ -263,6 +274,9 @@ class StreamsServiceProvider extends ServiceProvider
 
                 $manager->register();
 
+                $this->dispatch(new LoadCurrentTheme());
+                $this->dispatch(new AddViewNamespaces());
+
                 /*
                  * Do this after addons are registered
                  * so that they can override named routes.
@@ -289,6 +303,7 @@ class StreamsServiceProvider extends ServiceProvider
         $this->app->register(\Collective\Html\HtmlServiceProvider::class);
         $this->app->register(\Intervention\Image\ImageServiceProvider::class);
         $this->app->register(\TeamTNT\Scout\TNTSearchScoutServiceProvider::class);
+        $this->app->register(\GrahamCampbell\Exceptions\ExceptionsServiceProvider::class);
 
         if (env('APP_DEBUG')) {
             $this->app->register(\Barryvdh\Debugbar\ServiceProvider::class);

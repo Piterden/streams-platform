@@ -3,6 +3,7 @@
 use Anomaly\Streams\Platform\Assignment\AssignmentModel;
 use Anomaly\Streams\Platform\Collection\CacheCollection;
 use Anomaly\Streams\Platform\Entry\Contract\EntryInterface;
+use Anomaly\Streams\Platform\Entry\EntryModel;
 use Database\Query\JoinClause;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -15,6 +16,13 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class EloquentQueryBuilder extends Builder
 {
+
+    /**
+     * Runtime cache.
+     *
+     * @var array
+     */
+    protected static $cache = [];
 
     /**
      * The model being queried.
@@ -31,28 +39,38 @@ class EloquentQueryBuilder extends Builder
      */
     public function get($columns = ['*'])
     {
+        $key = $this->getCacheKey();
+
+        if (
+            env('INSTALLED')
+            && PHP_SAPI != 'cli'
+            && env('DB_CACHE') !== false
+            && $this->model instanceof EntryModel
+            && isset(self::$cache[$this->model->getCacheCollectionKey()][$key])
+        ) {
+            return self::$cache[$this->model->getCacheCollectionKey()][$key];
+        }
+
         $this->orderByDefault();
 
-        if (env('DB_CACHE')) {
+        if (PHP_SAPI != 'cli' && env('DB_CACHE') && $this->model->getTtl()) {
 
             $this->rememberIndex();
 
-            if ($this->model->getTtl()) {
-                try {
-                    return app('cache')->remember(
-                        $this->getCacheKey(),
-                        $this->model->getTtl(),
-                        function () use ($columns) {
-                            return parent::get($columns);
-                        }
-                    );
-                } catch (\Exception $e) {
-                    return parent::get($columns);
-                }
+            try {
+                return app('cache')->remember(
+                    $this->getCacheKey(),
+                    $this->model->getTtl(),
+                    function () use ($columns) {
+                        return parent::get($columns);
+                    }
+                );
+            } catch (\Exception $e) {
+                return parent::get($columns);
             }
         }
 
-        return parent::get($columns);
+        return self::$cache[$this->model->getCacheCollectionKey()][$key] = parent::get($columns);
     }
 
     /**
@@ -104,6 +122,17 @@ class EloquentQueryBuilder extends Builder
             ->index();
 
         return $this;
+    }
+
+    /**
+     * Drop a cache collection
+     * from runtime cache.
+     *
+     * @param $collection
+     */
+    public static function dropRuntimeCache($collection)
+    {
+        unset(self::$cache[$collection]);
     }
 
     /**
@@ -204,7 +233,12 @@ class EloquentQueryBuilder extends Builder
                     }
 
                     $this
-                        ->distinct()
+                        ->groupBy(
+                            [
+                                $model->getTableName() . '.id',
+                                $model->getTranslationsTableName() . '.' . $model->getTitleName(),
+                            ]
+                        )
                         ->select($model->getTableName() . '.*')
                         ->where(
                             function (Builder $query) use ($model) {

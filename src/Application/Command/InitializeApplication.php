@@ -4,6 +4,13 @@ use Anomaly\Streams\Platform\Application\Application;
 use Illuminate\Contracts\Foundation\Application as Laravel;
 use Symfony\Component\Console\Input\ArgvInput;
 
+/**
+ * Class InitializeApplication
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class InitializeApplication
 {
 
@@ -17,25 +24,29 @@ class InitializeApplication
         $app = env('APPLICATION_REFERENCE', 'default');
 
         if (PHP_SAPI == 'cli') {
+
             $app = (new ArgvInput())->getParameterOption('--app', $app);
 
-            $laravel->bind('path.public', function () use ($laravel) {
-                if ($path = env('PUBLIC_PATH')) {
-                    return base_path($path);
-                }
+            $laravel->bind(
+                'path.public',
+                function () use ($laravel) {
+                    if ($path = env('PUBLIC_PATH')) {
+                        return base_path($path);
+                    }
 
-                // Check default path.
-                if (file_exists($path = base_path('public/index.php'))) {
-                    return dirname($path);
-                }
+                    // Check default path.
+                    if (file_exists($path = base_path('public/index.php'))) {
+                        return dirname($path);
+                    }
 
-                // Check common alternative.
-                if (file_exists($path = base_path('public_html/index.php'))) {
-                    return dirname($path);
-                }
+                    // Check common alternative.
+                    if (file_exists($path = base_path('public_html/index.php'))) {
+                        return dirname($path);
+                    }
 
-                return base_path('public');
-            });
+                    return base_path('public');
+                }
+            );
         }
 
         /*
@@ -51,18 +62,26 @@ class InitializeApplication
          * initialize.
          */
         if ($application->isInstalled()) {
+
             if (env('DB_CONNECTION', env('DB_DRIVER'))) {
-                $application->locate();
-                $application->setup();
+
+                try {
+
+                    if (PHP_SAPI != 'cli') {
+                        $application->locate();
+                    }
+
+                    $application->setup();
+
+                    if (!$application->isEnabled()) {
+                        abort(503);
+                    }
+                } catch (\Exception $e) {
+                    // Do nothing.
+                }
             }
 
             return;
         }
-
-        /*
-         * If we're not installed just
-         * assume default for now.
-         */
-        $application->setReference('default');
     }
 }

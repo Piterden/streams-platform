@@ -10,6 +10,7 @@ use Anomaly\Streams\Platform\Image\Command\MakeImageTag;
 use Anomaly\Streams\Platform\Image\Command\MakeImageUrl;
 use Anomaly\Streams\Platform\Image\Image;
 use Anomaly\Streams\Platform\Model\Command\GetEloquentCriteria;
+use Anomaly\Streams\Platform\Routing\UrlGenerator;
 use Anomaly\Streams\Platform\Stream\Command\GetStream;
 use Anomaly\Streams\Platform\Stream\Command\GetStreams;
 use Anomaly\Streams\Platform\Support\Currency;
@@ -29,7 +30,6 @@ use Anomaly\Streams\Platform\View\Command\GetView;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Config\Repository;
-use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
@@ -461,6 +461,17 @@ class StreamsPlugin extends Plugin
                 'breadcrumb',
                 function () {
                     return app(BreadcrumbCollection::class);
+                }, ['is_safe' => ['html']]
+            ),
+            new \Twig_SimpleFunction(
+                'gravatar',
+                function ($email, array $parameters = []) {
+                    return $this->image->make(
+                        'https://www.gravatar.com/avatar/' . md5($email) . '?' . http_build_query(
+                            $parameters
+                        ),
+                        'image'
+                    );
                 }, ['is_safe' => ['html']]
             ),
             new \Twig_SimpleFunction('input_get', [$this->request, 'input']),

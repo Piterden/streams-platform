@@ -3,6 +3,13 @@
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Routing\Router;
 
+/**
+ * Class Kernel
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class Kernel extends \Illuminate\Foundation\Http\Kernel
 {
 
@@ -24,8 +31,12 @@ class Kernel extends \Illuminate\Foundation\Http\Kernel
      * @var array
      */
     protected $routeMiddleware = [
+        'can'        => \Illuminate\Auth\Middleware\Authorize::class,
         'auth'       => \Illuminate\Auth\Middleware\Authenticate::class,
+        'throttle'   => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        'bindings'   => \Illuminate\Routing\Middleware\SubstituteBindings::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
+        //'guest' => \Illuminate\Auth\Middleware\RedirectIfAuthenticated::class,
     ];
 
     /**
@@ -35,11 +46,11 @@ class Kernel extends \Illuminate\Foundation\Http\Kernel
      */
     protected $middlewareGroups = [
         'web' => [
-            \App\Http\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-            \App\Http\Middleware\VerifyCsrfToken::class,
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
 
@@ -53,7 +64,7 @@ class Kernel extends \Illuminate\Foundation\Http\Kernel
      * Create a new Kernel instance.
      *
      * @param Application $app
-     * @param Router      $router
+     * @param Router $router
      */
     public function __construct(Application $app, Router $router)
     {
@@ -102,12 +113,18 @@ class Kernel extends \Illuminate\Foundation\Http\Kernel
         /*
          * Check the domain for a locale.
          */
-        $url  = parse_url(array_get($_SERVER, 'HTTP_HOST'));
+        $url = parse_url(array_get($_SERVER, 'HTTP_HOST'));
+
+        if ($url === false) {
+            throw new \Exception('Malformed URL: ' . $url);
+        }
+
         $host = array_get($url, 'host');
 
         $pattern = '/^(' . implode('|', array_keys($locales['supported'])) . ')(\.)./';
 
         if ($host && ($hint === 'domain' || $hint === true) && preg_match($pattern, $host, $matches)) {
+
             define('LOCALE', $matches[1]);
 
             return;
@@ -119,9 +136,10 @@ class Kernel extends \Illuminate\Foundation\Http\Kernel
          */
         $pattern = '/^\/(' . implode('|', array_keys($locales['supported'])) . ')\//';
 
-        $uri = filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_URL);
+        $uri = array_get($_SERVER, 'REQUEST_URI', filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_URL));
 
         if (($hint === 'uri' || $hint === true) && preg_match($pattern, $uri, $matches)) {
+
             $_SERVER['ORIGINAL_REQUEST_URI'] = $uri;
             $_SERVER['REQUEST_URI']          = preg_replace($pattern, '/', $uri);
 
@@ -135,9 +153,10 @@ class Kernel extends \Illuminate\Foundation\Http\Kernel
          */
         $pattern = '/^\/(' . implode('|', array_keys($locales['supported'])) . ')$/';
 
-        $uri = filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_URL);
+        $uri = array_get($_SERVER, 'REQUEST_URI', filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_SANITIZE_URL));
 
         if (($hint === 'uri' || $hint === true) && preg_match($pattern, $uri, $matches)) {
+
             $_SERVER['ORIGINAL_REQUEST_URI'] = $uri;
             $_SERVER['REQUEST_URI']          = preg_replace($pattern, '/', $uri);
 

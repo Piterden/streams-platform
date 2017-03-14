@@ -22,6 +22,13 @@ class ViewComposer
 {
 
     /**
+     * Runtime cache.
+     *
+     * @var array
+     */
+    protected $cache = [];
+
+    /**
      * The view factory.
      *
      * @var Factory
@@ -94,14 +101,14 @@ class ViewComposer
     /**
      * Create a new ViewComposer instance.
      *
-     * @param Factory $view
-     * @param Mobile_Detect $agent
-     * @param Dispatcher $events
-     * @param AddonCollection $addons
-     * @param ViewOverrides $overrides
-     * @param Request $request
+     * @param Factory             $view
+     * @param Mobile_Detect       $agent
+     * @param Dispatcher          $events
+     * @param AddonCollection     $addons
+     * @param ViewOverrides       $overrides
+     * @param Request             $request
      * @param ViewMobileOverrides $mobiles
-     * @param Application $application
+     * @param Application         $application
      */
     public function __construct(
         Factory $view,
@@ -146,12 +153,46 @@ class ViewComposer
             return $view;
         }
 
-        $mobile    = $this->mobiles->get($this->theme->getNamespace(), []);
-        $overrides = $this->overrides->get($this->theme->getNamespace(), []);
+        $this->setPath($view);
 
-        if ($this->mobile && $path = array_get($mobile, $view->getName(), null)) {
+        $this->events->fire(new ViewComposed($view));
+
+        return $view;
+    }
+
+    /**
+     * Set the view path.
+     *
+     * @param View $view
+     */
+    protected function setPath(View $view)
+    {
+        /**
+         * If view path is already in internal cache use it.
+         */
+        if ($path = array_get($this->cache, $view->getName())) {
+
             $view->setPath($path);
-        } elseif ($path = array_get($overrides, $view->getName(), null)) {
+
+            return;
+        }
+
+        $mobile = $this->mobiles->get($this->theme->getNamespace(), []);
+
+        /**
+         * Merge system configured overrides
+         * with the overrides from the addon.
+         */
+        $overrides = array_merge(
+            $this->overrides->get($this->theme->getNamespace(), []),
+            config('streams.overrides', [])
+        );
+
+        $name = str_replace('theme::', $this->theme->getNamespace() . '::', $view->getName());
+
+        if ($this->mobile && $path = array_get($mobile, $name, null)) {
+            $view->setPath($path);
+        } elseif ($path = array_get($overrides, $name, null)) {
             $view->setPath($path);
         }
 
@@ -164,6 +205,8 @@ class ViewComposer
                 $view->setPath($path);
             } elseif ($path = array_get($overrides, $view->getName(), null)) {
                 $view->setPath($path);
+            } elseif ($path = array_get(config('streams.overrides'), $view->getName(), null)) {
+                $view->setPath($path);
             }
         }
 
@@ -171,9 +214,7 @@ class ViewComposer
             $view->setPath($overload);
         }
 
-        $this->events->fire(new ViewComposed($view));
-
-        return $view;
+        $this->cache[$view->getName()] = $view->getPath();
     }
 
     /**
@@ -204,23 +245,6 @@ class ViewComposer
         $path = str_replace('.', '/', $path);
 
         /*
-         * If the module is shorthand
-         * then check to see if we have
-         * an active module to use for it.
-         */
-        if ($namespace === 'module' && $this->module) {
-            $namespace = $this->module->getNamespace();
-        }
-
-        /*
-         * If the view is already in
-         * the theme then skip it.
-         */
-        if ($namespace == 'theme' || str_is('*.theme.*', $namespace)) {
-            return null;
-        }
-
-        /*
          * If the view is a streams view then
          * it's real easy to guess what the
          * override path should be.
@@ -236,33 +260,6 @@ class ViewComposer
         if ($addon = $this->addons->get($namespace)) {
             $override = $this->theme->getNamespace(
                 "addons/{$addon->getVendor()}/{$addon->getSlug()}-{$addon->getType()}/" . $path
-            );
-        }
-
-        if ($this->view->exists($override)) {
-            return $override;
-        }
-
-        /**
-         * Check if a published override exists.
-         */
-        if ($addon) {
-            $override = "app::addons/{$addon->getVendor()}/{$addon->getSlug()}-{$addon->getType()}/views/" . $path;
-        }
-
-        if ($this->view->exists($override)) {
-            return $override;
-        }
-
-        /*
-         * If the view uses a dot syntax namespace then
-         * transform it all into the override view path.
-         *
-         * @deprecated since v3.0.0
-         */
-        if ($addon) {
-            $override = $this->theme->getNamespace(
-                "addon/{$addon->getVendor()}/{$addon->getSlug()}-{$addon->getType()}/" . $path
             );
         }
 

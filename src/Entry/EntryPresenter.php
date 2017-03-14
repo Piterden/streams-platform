@@ -32,7 +32,7 @@ class EntryPresenter extends EloquentPresenter
     {
         return $this->object->created_at
             ->setTimezone(config('app.timezone'))
-            ->format(config('streams.date_format'));
+            ->format(config('streams::datetime.date_format'));
     }
 
     /**
@@ -44,7 +44,7 @@ class EntryPresenter extends EloquentPresenter
     {
         return $this->object->created_at
             ->setTimezone(config('app.timezone'))
-            ->format(config('streams.date_format') . ' ' . config('streams.time_format'));
+            ->format(config('streams::datetime.date_format') . ' ' . config('streams::datetime.time_format'));
     }
 
     /**
@@ -56,7 +56,7 @@ class EntryPresenter extends EloquentPresenter
     {
         return $this->object->updated_at
             ->setTimezone(config('app.timezone'))
-            ->format(config('streams.date_format'));
+            ->format(config('streams::datetime.date_format'));
     }
 
     /**
@@ -68,7 +68,7 @@ class EntryPresenter extends EloquentPresenter
     {
         return $this->object->updated_at
             ->setTimezone(config('app.timezone'))
-            ->format(config('streams.date_format') . ' ' . config('streams.time_format'));
+            ->format(config('streams:datetime.date_format') . ' ' . config('streams:datetime.time_format'));
     }
 
     /**
@@ -102,7 +102,7 @@ class EntryPresenter extends EloquentPresenter
             $text = trans($text);
         }
 
-        return '<span class="label label-' . $context . ' label-' . $size . '">' . $text . '</span>';
+        return '<span class="tag tag-' . $context . ' tag-' . $size . '">' . $text . '</span>';
     }
 
     /**
