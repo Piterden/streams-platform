@@ -1,22 +1,31 @@
 <?php namespace Anomaly\Streams\Platform\Entry;
 
-use Anomaly\Streams\Platform\Model\EloquentModel;
 use Anomaly\Streams\Platform\Addon\FieldType\FieldType;
-use Anomaly\Streams\Platform\Entry\Contract\EntryInterface;
-use Anomaly\Streams\Platform\Field\Contract\FieldInterface;
+use Anomaly\Streams\Platform\Addon\FieldType\FieldTypePresenter;
 use Anomaly\Streams\Platform\Addon\FieldType\FieldTypeQuery;
 use Anomaly\Streams\Platform\Assignment\AssignmentCollection;
-use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
-use Anomaly\Streams\Platform\Addon\FieldType\FieldTypePresenter;
 use Anomaly\Streams\Platform\Assignment\Contract\AssignmentInterface;
+use Anomaly\Streams\Platform\Entry\Contract\EntryInterface;
+use Anomaly\Streams\Platform\Field\Contract\FieldInterface;
+use Anomaly\Streams\Platform\Model\EloquentModel;
+use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
+use Carbon\Carbon;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
-use Robbo\Presenter\PresentableInterface;
 use Laravel\Scout\ModelObserver;
 use Laravel\Scout\Searchable;
-use Carbon\Carbon;
+use Robbo\Presenter\PresentableInterface;
 
+/**
+ * Class EntryModel
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class EntryModel extends EloquentModel implements EntryInterface, PresentableInterface
 {
+
     use Searchable;
 
     /**
@@ -70,11 +79,12 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
     {
         $instance = new static;
 
-        $class    = get_class($instance);
-        $events   = $instance->getObservableEvents();
-        $observer = substr($class, 0, -5) . 'Observer';
+        $class     = get_class($instance);
+        $events    = $instance->getObservableEvents();
+        $observer  = substr($class, 0, -5) . 'Observer';
+        $observing = class_exists($observer);
 
-        if ($events && class_exists($observer)) {
+        if ($events && $observing) {
             self::observe(app($observer));
         }
 
@@ -82,7 +92,7 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
             ModelObserver::disableSyncingFor(get_class(new static));
         }
 
-        if ($events && !static::$dispatcher->hasListeners('eloquent.' . array_shift($events) . ': ' . $class)) {
+        if ($events && !$observing) {
             self::observe(EntryObserver::class);
         }
 
@@ -380,7 +390,7 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
     public function getAttribute($key)
     {
         // Check if it's a relationship first.
-        if (in_array($key, $this->relationships)) {
+        if (in_array($key, array_merge($this->relationships, ['created_by', 'updated_by']))) {
             return parent::getAttribute(camel_case($key));
         }
 
@@ -521,7 +531,7 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
     /**
      * Get the field slugs for assigned fields.
      *
-     * @param  null  $prefix
+     * @param  null $prefix
      * @return array
      */
     public function getAssignmentFieldSlugs($prefix = null)
@@ -585,6 +595,32 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
     }
 
     /**
+     * Return required assignments.
+     *
+     * @return AssignmentCollection
+     */
+    public function getRequiredAssignments()
+    {
+        $stream      = $this->getStream();
+        $assignments = $stream->getAssignments();
+
+        return $assignments->required();
+    }
+
+    /**
+     * Return searchable assignments.
+     *
+     * @return AssignmentCollection
+     */
+    public function getSearchableAssignments()
+    {
+        $stream      = $this->getStream();
+        $assignments = $stream->getAssignments();
+
+        return $assignments->searchable();
+    }
+
+    /**
      * Get the translatable flag.
      *
      * @return bool
@@ -616,6 +652,46 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
     public function lastModified()
     {
         return $this->updated_at ?: $this->created_at;
+    }
+
+    /**
+     * Return the related creator.
+     *
+     * @return Authenticatable
+     */
+    public function getCreatedBy()
+    {
+        return $this->created_by;
+    }
+
+    /**
+     * Return the creator relation.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function createdBy()
+    {
+        return $this->belongsTo(config('auth.providers.users.model'));
+    }
+
+    /**
+     * Return the related updater.
+     *
+     * @return Authenticatable
+     */
+    public function getUpdatedBy()
+    {
+        return $this->updated_by;
+    }
+
+    /**
+     * Return the updater relation.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function updatedBy()
+    {
+        return $this->belongsTo(config('auth.providers.users.model'));
     }
 
     /**
@@ -667,9 +743,10 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
 
         /* @var AssignmentInterface $assignment */
         foreach ($assignments->notTranslatable() as $assignment) {
+
             $fieldType = $assignment->getFieldType();
 
-            $fieldType->setValue($this->getFieldValue($assignment->getFieldSlug()));
+            $fieldType->setValue($this->getRawAttribute($assignment->getFieldSlug()));
 
             $fieldType->setEntry($this);
 
@@ -695,7 +772,7 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
     }
 
     /**
-     * @param  array           $items
+     * @param  array $items
      * @return EntryCollection
      */
     public function newCollection(array $items = [])
@@ -722,7 +799,7 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
         $presenter = substr(get_class($this), 0, -5) . 'Presenter';
 
         if (class_exists($presenter)) {
-            return app()->make($presenter, ['object' => $this]);
+            return app()->makeWith($presenter, ['object' => $this]);
         }
 
         return new EntryPresenter($this);
@@ -757,7 +834,7 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
      */
     public function newRouter()
     {
-        return app()->make($this->getRouterName(), ['entry' => $this]);
+        return app()->makeWith($this->getRouterName(), ['entry' => $this]);
     }
 
     /**
@@ -789,7 +866,7 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
     /**
      * Create a new Eloquent query builder for the model.
      *
-     * @param  \Illuminate\Database\Query\Builder           $query
+     * @param  \Illuminate\Database\Query\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder|static
      */
     public function newEloquentBuilder($query)
@@ -826,13 +903,26 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
      */
     public function toSearchableArray()
     {
-        $array = $this->toArray();
+        $array = [
+            'id' => $this->getId(),
+        ];
 
-        foreach ($array as $key => &$value) {
-            if (is_array($value)) {
-                $value = json_encode($value);
+        $searchable = array_merge(
+            $this->searchableAttributes,
+            $this
+                ->getSearchableAssignments()
+                ->fieldSlugs()
+        );
+
+        foreach ($searchable as $field) {
+
+            if (!in_array($field, $searchable)) {
                 continue;
             }
+
+            $array[$field] = (string)$this
+                ->getFieldType($field)
+                ->getSearchableValue();
         }
 
         return $array;
@@ -841,7 +931,7 @@ class EntryModel extends EloquentModel implements EntryInterface, PresentableInt
     /**
      * Override the __get method.
      *
-     * @param  string               $key
+     * @param  string $key
      * @return EntryPresenter|mixed
      */
     public function __get($key)

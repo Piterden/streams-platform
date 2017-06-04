@@ -8,9 +8,9 @@ use Anomaly\Streams\Platform\Ui\Button\Contract\ButtonInterface;
 /**
  * Class ButtonFactory
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class ButtonFactory
 {
@@ -91,7 +91,7 @@ class ButtonFactory
         }
 
         /* @var ButtonInterface $button */
-        $button = app()->make(array_get($parameters, 'button'), $parameters);
+        $button = app()->makeWith(array_get($parameters, 'button'), $parameters);
 
         $this->hydrator->hydrate($button, $parameters);
 

@@ -6,8 +6,16 @@ use Anomaly\Streams\Platform\Ui\Table\TableBuilder;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Support\Collection;
 
+/**
+ * Class EloquentTableRepository
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class EloquentTableRepository implements TableRepositoryInterface
 {
+
     use DispatchesJobs;
 
     /**
@@ -65,13 +73,14 @@ class EloquentTableRepository implements TableRepositoryInterface
          * Before we actually adjust the baseline query
          * set the total amount of entries possible back
          * on the table so it can be used later.
+         *
+         * We unset the orders on the query
+         * because of pgsql grouping issues.
          */
-        $total = clone($query);
+        $count = clone($query);
+        $count->getQuery()->orders = null;
 
-        $total = $total
-            ->select($this->model->getTable() . '.id')
-            ->groupBy($this->model->getTable() . '.id')
-            ->count($this->model->getTable() . '.id');
+        $total = $count->count();
 
         $builder->setTableOption('total_results', $total);
 
@@ -81,8 +90,8 @@ class EloquentTableRepository implements TableRepositoryInterface
          * we find a page that is has something to show us.
          */
         $limit  = (int)$builder->getTableOption('limit', config('streams::system.per_page', 15));
-        $page   = app('request')->get($builder->getTableOption('prefix') . 'page', 1);
-        $offset = $limit * ($page - 1);
+        $page   = (int)app('request')->get($builder->getTableOption('prefix') . 'page', 1);
+        $offset = $limit * (($page ?: 1) - 1);
 
         if ($total < $offset && $page > 1) {
             $url = str_replace(
@@ -93,12 +102,6 @@ class EloquentTableRepository implements TableRepositoryInterface
 
             header('Location: ' . $url);
         }
-
-        /*
-         * Limit the results to the limit and offset
-         * based on the page if any.
-         */
-        $offset = $limit * (app('request')->get($builder->getTableOption('prefix') . 'page', 1) - 1);
 
         $query = $query->take($limit)->offset($offset);
 

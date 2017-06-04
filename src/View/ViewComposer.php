@@ -3,6 +3,7 @@
 use Anomaly\Streams\Platform\Addon\AddonCollection;
 use Anomaly\Streams\Platform\Addon\Module\Module;
 use Anomaly\Streams\Platform\Addon\Theme\Theme;
+use Anomaly\Streams\Platform\Application\Application;
 use Anomaly\Streams\Platform\View\Event\ViewComposed;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\View\Factory;
@@ -13,9 +14,9 @@ use Mobile_Detect;
 /**
  * Class ViewComposer
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class ViewComposer
 {
@@ -84,6 +85,13 @@ class ViewComposer
     protected $overrides;
 
     /**
+     * The application instance.
+     *
+     * @var Application
+     */
+    protected $application;
+
+    /**
      * The view mobile overrides.
      *
      * @var ViewMobileOverrides
@@ -91,13 +99,16 @@ class ViewComposer
     protected $mobiles;
 
     /**
+     * Create a new ViewComposer instance.
+     *
      * @param Factory             $view
      * @param Mobile_Detect       $agent
      * @param Dispatcher          $events
      * @param AddonCollection     $addons
-     * @param Request             $request
      * @param ViewOverrides       $overrides
+     * @param Request             $request
      * @param ViewMobileOverrides $mobiles
+     * @param Application         $application
      */
     public function __construct(
         Factory $view,
@@ -106,15 +117,17 @@ class ViewComposer
         AddonCollection $addons,
         ViewOverrides $overrides,
         Request $request,
-        ViewMobileOverrides $mobiles
+        ViewMobileOverrides $mobiles,
+        Application $application
     ) {
-        $this->view      = $view;
-        $this->agent     = $agent;
-        $this->events    = $events;
-        $this->addons    = $addons;
-        $this->mobiles   = $mobiles;
-        $this->request   = $request;
-        $this->overrides = $overrides;
+        $this->view        = $view;
+        $this->agent       = $agent;
+        $this->events      = $events;
+        $this->addons      = $addons;
+        $this->mobiles     = $mobiles;
+        $this->request     = $request;
+        $this->overrides   = $overrides;
+        $this->application = $application;
 
         $area = $request->segment(1) == 'admin' ? 'admin' : 'standard';
 
@@ -132,122 +145,16 @@ class ViewComposer
      */
     public function compose(View $view)
     {
+
         if (!$this->theme || !env('INSTALLED')) {
+
             $this->events->fire(new ViewComposed($view));
 
             return $view;
         }
 
-        $mobile    = $this->mobiles->get($this->theme->getNamespace(), []);
-        $overrides = $this->overrides->get($this->theme->getNamespace(), []);
-
-        if ($this->mobile && $path = array_get($mobile, $view->getName(), null)) {
-            $view->setPath($path);
-        } elseif ($path = array_get($overrides, $view->getName(), null)) {
-            $view->setPath($path);
-        }
-
-        if ($this->module) {
-            $mobile    = $this->mobiles->get($this->module->getNamespace(), []);
-            $overrides = $this->overrides->get($this->module->getNamespace(), []);
-
-            if ($this->mobile && $path = array_get($mobile, $view->getName(), null)) {
-                $view->setPath($path);
-            } elseif ($path = array_get($overrides, $view->getName(), null)) {
-                $view->setPath($path);
-            }
-        }
-
-        if ($overload = $this->getOverloadPath($view)) {
-            $view->setPath($overload);
-        }
-
         $this->events->fire(new ViewComposed($view));
 
         return $view;
-    }
-
-    /**
-     * Get the override view path.
-     *
-     * @param  $view
-     * @return null|string
-     */
-    public function getOverloadPath(View $view)
-    {
-
-        /*
-         * We can only overload namespaced
-         * views right now.
-         */
-        if (!str_contains($view->getName(), '::')) {
-            return null;
-        }
-
-        /*
-         * Split the view into it's
-         * namespace and path.
-         */
-        list($namespace, $path) = explode('::', $view->getName());
-
-        $path = str_replace('.', '/', $path);
-
-        /*
-         * If the module is shorthand
-         * then check to see if we have
-         * an active module to use for it.
-         */
-        if ($namespace === 'module' && $this->module) {
-            $namespace = $this->module->getNamespace();
-        }
-
-        /*
-         * If the view is already in
-         * the theme then skip it.
-         */
-        if ($namespace == 'theme' || str_is('*.theme.*', $namespace)) {
-            return null;
-        }
-
-        /*
-         * If the view is a streams view then
-         * it's real easy to guess what the
-         * override path should be.
-         */
-        if ($namespace == 'streams') {
-            $path = $this->theme->getNamespace('streams/' . $path);
-        }
-
-        /*
-         * If the view uses a dot syntax namespace then
-         * transform it all into the override view path.
-         */
-        if ($addon = $this->addons->get($namespace)) {
-            $path = $this->theme->getNamespace(
-                "addons/{$addon->getVendor()}/{$addon->getSlug()}-{$addon->getType()}/" . $path
-            );
-        }
-
-        if ($this->view->exists($path)) {
-            return $path;
-        }
-
-        /*
-         * If the view uses a dot syntax namespace then
-         * transform it all into the override view path.
-         *
-         * @deprecated since v3.0.0
-         */
-        if ($addon) {
-            $path = $this->theme->getNamespace(
-                "addon/{$addon->getVendor()}/{$addon->getSlug()}-{$addon->getType()}/" . $path
-            );
-        }
-
-        if ($this->view->exists($path)) {
-            return $path;
-        }
-
-        return null;
     }
 }

@@ -5,9 +5,9 @@ use Anomaly\Streams\Platform\Ui\ControlPanel\Component\Section\SectionCollection
 /**
  * Interface SectionInterface
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 interface SectionInterface
 {
@@ -56,6 +56,21 @@ interface SectionInterface
      * @return $this
      */
     public function setTitle($title);
+
+    /**
+     * Get the label.
+     *
+     * @return string
+     */
+    public function getLabel();
+
+    /**
+     * Set the label.
+     *
+     * @param  string $label
+     * @return $this
+     */
+    public function setLabel($label);
 
     /**
      * Get the class.
@@ -148,6 +163,21 @@ interface SectionInterface
     public function setHighlighted($highlighted);
 
     /**
+     * Get the context.
+     *
+     * @return boolean
+     */
+    public function getContext();
+
+    /**
+     * Set the context flag.
+     *
+     * @param  boolean $active
+     * @return $this
+     */
+    public function setContext($context);
+
+    /**
      * Get the parent.
      *
      * @return null|string
@@ -229,9 +259,24 @@ interface SectionInterface
     public function setBreadcrumb($breadcrumb);
 
     /**
+     * Get the hidden flag.
+     *
+     * @return bool
+     */
+    public function isHidden();
+
+    /**
+     * Set the hidden flag.
+     *
+     * @param $hidden
+     * @return $this
+     */
+    public function setHidden($hidden);
+
+    /**
      * Get the HREF attribute.
      *
-     * @param  null   $path
+     * @param  null $path
      * @return string
      */
     public function getHref($path = null);

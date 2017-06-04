@@ -8,9 +8,9 @@ use Anomaly\Streams\Platform\Support\Value;
 /**
  * Class EntryPresenter
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class EntryPresenter extends EloquentPresenter
 {
@@ -32,7 +32,7 @@ class EntryPresenter extends EloquentPresenter
     {
         return $this->object->created_at
             ->setTimezone(config('app.timezone'))
-            ->format(config('streams.date_format'));
+            ->format(config('streams::datetime.date_format'));
     }
 
     /**
@@ -44,7 +44,7 @@ class EntryPresenter extends EloquentPresenter
     {
         return $this->object->created_at
             ->setTimezone(config('app.timezone'))
-            ->format(config('streams.date_format') . ' ' . config('streams.time_format'));
+            ->format(config('streams::datetime.date_format') . ' ' . config('streams::datetime.time_format'));
     }
 
     /**
@@ -56,7 +56,7 @@ class EntryPresenter extends EloquentPresenter
     {
         return $this->object->updated_at
             ->setTimezone(config('app.timezone'))
-            ->format(config('streams.date_format'));
+            ->format(config('streams::datetime.date_format'));
     }
 
     /**
@@ -68,7 +68,7 @@ class EntryPresenter extends EloquentPresenter
     {
         return $this->object->updated_at
             ->setTimezone(config('app.timezone'))
-            ->format(config('streams.date_format') . ' ' . config('streams.time_format'));
+            ->format(config('streams:datetime.date_format') . ' ' . config('streams:datetime.time_format'));
     }
 
     /**
@@ -96,9 +96,13 @@ class EntryPresenter extends EloquentPresenter
         /* @var Value $value */
         $value = app(Value::class);
 
-        return '<span class="label label-' . $context . ' label-' . $size . '">' . trans(
-            $value->make($text, $this->object)
-        ) . '</span>';
+        $text = $value->make($text, $this->object);
+
+        if (trans()->has($text) && is_string(trans($text))) {
+            $text = trans($text);
+        }
+
+        return '<span class="tag tag-' . $context . ' tag-' . $size . '">' . $text . '</span>';
     }
 
     /**

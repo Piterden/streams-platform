@@ -2,18 +2,19 @@
 
 use Anomaly\Streams\Platform\Support\Hydrator;
 use Anomaly\Streams\Platform\Traits\FiresCallbacks;
-use Illuminate\Contracts\Container\Container;
+use Illuminate\Container\Container;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 
 /**
  * Class EntryFactory
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class EntryFactory
 {
+
     use DispatchesJobs;
     use FiresCallbacks;
 
@@ -32,7 +33,7 @@ class EntryFactory
     protected $container;
 
     /**
-     * Create a new StreamPluginFunctions instance.
+     * Create a new EntryFactory instance.
      *
      * @param Hydrator  $hydrator
      * @param Container $container
@@ -65,7 +66,7 @@ class EntryFactory
         /* @var EntryModel $model */
         $model = $this->container->make($model);
 
-        return $this->container->make(
+        return $this->container->makeWith(
             $model->getCriteriaName(),
             [
                 'query'  => $model->newQuery(),

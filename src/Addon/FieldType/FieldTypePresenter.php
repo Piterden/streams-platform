@@ -5,9 +5,9 @@ use Anomaly\Streams\Platform\Addon\AddonPresenter;
 /**
  * Class FieldTypePresenter
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class FieldTypePresenter extends AddonPresenter
 {
@@ -31,23 +31,28 @@ class FieldTypePresenter extends AddonPresenter
     }
 
     /**
-     * By default return the value.
-     * This can be dangerous if used in a loop!
-     * There is a PHP bug that caches it's
-     * output when used in a loop.
-     * Take heed.
+     * Return a label.
      *
+     * @param         $text
+     * @param  string $context
+     * @param  string $size
      * @return string
      */
-    public function __toString()
+    public function label($text = null, $context = null, $size = null)
     {
-        $value = $this->object->getValue();
-
-        if (is_array($value) || is_object($value)) {
-            return json_encode($value);
+        if (!$text) {
+            $text = (string)$this->object->getValue();
         }
 
-        return (string)$this->object->getValue();
+        if (!$context) {
+            $context = 'default';
+        }
+
+        if (!$size) {
+            $size = 'sm';
+        }
+
+        return '<span class="label label-' . $context . ' label-' . $size . '">' . trans($text) . '</span>';
     }
 
     /**
@@ -76,9 +81,33 @@ class FieldTypePresenter extends AddonPresenter
     }
 
     /**
+     * By default return the value.
+     * This can be dangerous if used in a loop!
+     * There is a PHP bug that caches it's
+     * output when used in a loop.
+     * Take heed.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        $value = $this->object->getValue();
+
+        if (is_array($value) || is_object($value)) {
+            return json_encode($value);
+        }
+
+        return (string)$this->object->getValue();
+    }
+
+    /**
      * Return the contextual value.
      * This is the most basic usable form
      * of the value for this field type.
+     *
+     * Often times this is used when passing
+     * values to an .env value or config value
+     * as it used in the Settings and Preferences.
      *
      * @return string
      */
@@ -87,5 +116,18 @@ class FieldTypePresenter extends AddonPresenter
         $object = $this->getObject();
 
         return $object->getValue();
+    }
+
+    /**
+     * Return the contextual string value
+     * for humans. This is the most basic
+     * value for humans display purposes.
+     *
+     * This is useful when looping over fields
+     * and outputting a field value inline.
+     */
+    public function __print()
+    {
+        return $this->__toString();
     }
 }

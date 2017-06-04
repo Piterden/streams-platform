@@ -7,9 +7,9 @@ use Anomaly\Streams\Platform\Ui\Form\FormValidator;
 /**
  * Class SetDefaultParameters
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class SetDefaultParameters
 {
@@ -63,7 +63,9 @@ class SetDefaultParameters
          * to the builder's entry.
          */
         if (!$this->builder->getFormMode()) {
-            $this->builder->setFormMode($this->builder->getEntry() ? 'edit' : 'create');
+            $this->builder->setFormMode(
+                ($this->builder->getFormEntryId() || $this->builder->getEntry()) ? 'edit' : 'create'
+            );
         }
 
         /*
@@ -71,8 +73,12 @@ class SetDefaultParameters
          */
         $reflection = new \ReflectionClass($this->builder);
 
+        // Stash this for later.
+        $builder = get_class($this->builder);
+
         /* @var \ReflectionProperty $property */
         foreach ($reflection->getProperties(\ReflectionProperty::IS_PROTECTED) as $property) {
+
             if (in_array($property->getName(), $this->skips)) {
                 continue;
             }
@@ -97,9 +103,9 @@ class SetDefaultParameters
              * builder property into a handler.
              * If it exists, then go ahead and use it.
              */
-            $handler = str_replace('FormBuilder', 'Form' . ucfirst($property->getName()), get_class($this->builder));
+            $handler = str_replace('FormBuilder', 'Form' . ucfirst($property->getName()), $builder);
 
-            if (class_exists($handler)) {
+            if ($handler !== $builder && class_exists($handler)) {
 
                 /*
                  * Make sure the handler is

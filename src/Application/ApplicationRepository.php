@@ -5,9 +5,9 @@ use Anomaly\Streams\Platform\Model\EloquentRepository;
 /**
  * Class ApplicationRepository
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class ApplicationRepository extends EloquentRepository
 {
@@ -38,11 +38,21 @@ class ApplicationRepository extends EloquentRepository
     public function findByDomain($domain)
     {
         $domain = trim(str_replace(['http://', 'https://'], '', $domain), '/');
-        
+
         return $this->model
             ->leftJoin('applications_domains', 'applications.id', '=', 'applications_domains.application_id')
             ->where('applications.domain', $domain)
             ->orWhere('applications_domains.domain', $domain)
             ->first();
+    }
+
+    /**
+     * Find an application by it's reference.
+     *
+     * @param $reference
+     */
+    public function findByReference($reference)
+    {
+        return $this->model->where('reference', $reference)->first();
     }
 }

@@ -2,16 +2,16 @@
 
 use Anomaly\Streams\Platform\Addon\Module\ModuleCollection;
 use Anomaly\Streams\Platform\Message\MessageBag;
-use Illuminate\Config\Repository;
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Http\Request;
 use Illuminate\Session\Store;
 
 /**
  * Class CheckIfInstallerExists
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class CheckIfInstallerExists
 {
@@ -85,7 +85,7 @@ class CheckIfInstallerExists
             $this->request->path() == 'admin/dashboard' &&
             $this->modules->get('anomaly.module.installer')
         ) {
-            $this->session->set(__CLASS__ . 'warned', true);
+            $this->session->put(__CLASS__ . 'warned', true);
             $this->messages->error('streams::message.delete_installer');
         }
     }

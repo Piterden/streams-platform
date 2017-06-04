@@ -5,9 +5,9 @@ use Anomaly\Streams\Platform\Support\Collection;
 /**
  * Class BreadcrumbCollection
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class BreadcrumbCollection extends Collection
 {
@@ -18,7 +18,7 @@ class BreadcrumbCollection extends Collection
      * @param      $key
      * @param null $url
      */
-    public function add($key, $url)
+    public function add($key, $url = null)
     {
         $this->put($key, $url);
     }
@@ -29,12 +29,26 @@ class BreadcrumbCollection extends Collection
      * @param string $key
      * @param string $value
      */
-    public function put($key, $value)
+    public function put($key, $value = null)
     {
+        if (!$value) {
+            $value = url()->current();
+        }
+
         if (!starts_with($value, 'http')) {
             $value = url($value);
         }
 
         parent::put($key, $value);
+    }
+
+    /**
+     * Return the breadcrumb.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return view('streams::partials/breadcrumb')->render();
     }
 }

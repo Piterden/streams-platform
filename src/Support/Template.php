@@ -7,9 +7,9 @@ use Illuminate\Filesystem\Filesystem;
 /**
  * Class Template
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class Template
 {
@@ -59,17 +59,27 @@ class Template
      */
     public function render($template, array $payload = [])
     {
-        $view = 'templates/' . md5($template);
-        $path = $this->application->getStoragePath($view);
+        $path = $this->path($template);
 
         if (!$this->files->isDirectory($directory = dirname($path))) {
             $this->files->makeDirectory($directory, 0777, true);
         }
 
-        $this->files->put($path . '.twig', $template);
+        if (!$this->files->exists($path . '.twig')) {
+            $this->files->put($path . '.twig', $template);
+        }
 
-        return $this->view
-            ->make('storage::' . $view, $payload)
-            ->render();
+        return $this->view->make('storage::' . str_replace($this->application->getStoragePath(), '', $path), $payload);
+    }
+
+    /**
+     * Return the path to a string template.
+     *
+     * @param $template
+     * @return string
+     */
+    public function path($template)
+    {
+        return $this->application->getStoragePath('support/parsed/' . md5($template));
     }
 }

@@ -5,13 +5,14 @@ use Anomaly\Streams\Platform\Entry\Contract\EntryInterface;
 use Anomaly\Streams\Platform\Model\EloquentModel;
 use Anomaly\Streams\Platform\Support\Decorator;
 use Anomaly\Streams\Platform\Support\Presenter;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
  * Class FieldType
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class FieldType extends Addon
 {
@@ -504,13 +505,53 @@ class FieldType extends Addon
     }
 
     /**
+     * Get the value for repopulating
+     * field after failed validation.
+     *
+     * @param  null $default
+     * @return mixed
+     */
+    public function getRepopulateValue($default = null)
+    {
+        return $this->getPostValue($default);
+    }
+
+    /**
      * Return if any posted input exists.
      *
      * @return bool
      */
     public function hasPostedInput()
     {
-        return isset($_POST[str_replace('.', '_', $this->getInputName())]);
+        if (!isset($_POST[str_replace('.', '_', $this->getInputName())])) {
+            return isset($_FILES[str_replace('.', '_', $this->getInputName())]);
+        }
+
+        return true;
+    }
+
+    /**
+     * Get the value to index.
+     *
+     * @return string
+     */
+    public function getSearchableValue()
+    {
+        $value = $this->getValue();
+
+        if ($value instanceof Relation) {
+            $value = $value->getResults();
+        }
+
+        if ($value instanceof EloquentModel) {
+            $value = $value->toArray();
+        }
+
+        if (is_array($value)) {
+            $value = json_encode($value);
+        }
+
+        return (string)$value;
     }
 
     /**
@@ -690,6 +731,20 @@ class FieldType extends Addon
     }
 
     /**
+     * Add an attribute.
+     *
+     * @param $attribute
+     * @param $value
+     * @return $this
+     */
+    public function addAttribute($attribute, $value)
+    {
+        $this->attributes[$attribute] = $value;
+
+        return $this;
+    }
+
+    /**
      * Get the suffix.
      *
      * @return null|string
@@ -823,6 +878,16 @@ class FieldType extends Addon
     }
 
     /**
+     * Get the column name.
+     *
+     * @return string
+     */
+    public function getUniqueColumnName()
+    {
+        return $this->getColumnName();
+    }
+
+    /**
      * Get the column type.
      *
      * @return string
@@ -937,7 +1002,7 @@ class FieldType extends Addon
             $this->presenter = 'Anomaly\Streams\Platform\Addon\FieldType\FieldTypePresenter';
         }
 
-        return app()->make($this->presenter, ['object' => $this]);
+        return app()->makeWith($this->presenter, ['object' => $this]);
     }
 
     /**
@@ -1035,7 +1100,7 @@ class FieldType extends Addon
             $this->schema = 'Anomaly\Streams\Platform\Addon\FieldType\FieldTypeSchema';
         }
 
-        return app()->make($this->schema, ['fieldType' => $this]);
+        return app()->makeWith($this->schema, ['fieldType' => $this]);
     }
 
     /**
@@ -1066,7 +1131,7 @@ class FieldType extends Addon
             $this->parser = 'Anomaly\Streams\Platform\Addon\FieldType\FieldTypeParser';
         }
 
-        return app()->make($this->parser, ['fieldType' => $this]);
+        return app()->makeWith($this->parser, ['fieldType' => $this]);
     }
 
     /**
@@ -1097,7 +1162,7 @@ class FieldType extends Addon
             $this->query = 'Anomaly\Streams\Platform\Addon\FieldType\FieldTypeQuery';
         }
 
-        return app()->make($this->query, [$this]);
+        return app()->makeWith($this->query, [$this]);
     }
 
     /**

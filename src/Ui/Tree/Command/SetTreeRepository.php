@@ -5,9 +5,9 @@ use Anomaly\Streams\Platform\Ui\Tree\TreeBuilder;
 /**
  * Class SetTreeRepository
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class SetTreeRepository
 {
@@ -59,6 +59,6 @@ class SetTreeRepository
         /*
          * Set the repository on the form!
          */
-        $tree->setRepository(app()->make($repository, compact('model', 'tree')));
+        $tree->setRepository(app()->makeWith($repository, compact('model', 'tree')));
     }
 }

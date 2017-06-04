@@ -6,9 +6,9 @@ use Anomaly\Streams\Platform\Ui\Button\Contract\ButtonInterface;
 /**
  * Class ButtonCollection
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class ButtonCollection extends Collection
 {
@@ -25,5 +25,15 @@ class ButtonCollection extends Collection
                 return $button->isEnabled();
             }
         );
+    }
+
+    /**
+     * Render the actions.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return view('streams::buttons/buttons', ['buttons' => $this->items])->render();
     }
 }

@@ -12,9 +12,9 @@ use Anomaly\Streams\Platform\Model\EloquentCollection;
 /**
  * Interface StreamInterface
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 interface StreamInterface
 {
@@ -25,6 +25,21 @@ interface StreamInterface
      * @return mixed
      */
     public function compile();
+
+    /**
+     * Flush the entry stream's cache.
+     *
+     * @return StreamInterface
+     */
+    public function flushCache();
+
+    /**
+     * Fire field type events.
+     *
+     * @param       $trigger
+     * @param array $payload
+     */
+    public function fireFieldTypeEvents($trigger, $payload = []);
 
     /**
      * Get the ID.
@@ -71,8 +86,8 @@ interface StreamInterface
     /**
      * Get the config.
      *
-     * @param  null  $key
-     * @param  null  $default
+     * @param  null $key
+     * @param  null $default
      * @return mixed
      */
     public function getConfig($key = null, $default = null);
@@ -151,7 +166,7 @@ interface StreamInterface
     /**
      * Get the field slugs for assigned fields.
      *
-     * @param  null  $prefix
+     * @param  null $prefix
      * @return array
      */
     public function getAssignmentFieldSlugs($prefix = null);
@@ -284,13 +299,6 @@ interface StreamInterface
      * @return string
      */
     public function getForeignKey();
-
-    /**
-     * Flush the entry stream's cache.
-     *
-     * @return StreamInterface
-     */
-    public function flushCache();
 
     /**
      * @return array

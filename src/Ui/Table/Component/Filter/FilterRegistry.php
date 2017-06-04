@@ -8,9 +8,9 @@ use Anomaly\Streams\Platform\Ui\Table\Component\Filter\Type\SelectFilter;
 /**
  * Class FilterRegistry
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class FilterRegistry
 {
@@ -26,8 +26,9 @@ class FilterRegistry
             'filter' => InputFilter::class,
         ],
         'search' => [
-            'slug'   => 'search',
-            'filter' => SearchFilter::class,
+            'slug'        => 'search',
+            'filter'      => SearchFilter::class,
+            'placeholder' => 'streams::message.search',
         ],
         'select' => [
             'slug'   => 'select',

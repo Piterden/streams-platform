@@ -1,14 +1,18 @@
 <?php namespace Anomaly\Streams\Platform\Application\Command;
 
+use Illuminate\Foundation\Bus\DispatchesJobs;
+
 /**
  * Class ReadEnvironmentFile
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class ReadEnvironmentFile
 {
+
+    use DispatchesJobs;
 
     /**
      * Handle the command.
@@ -19,17 +23,21 @@ class ReadEnvironmentFile
     {
         $data = [];
 
-        if (!file_exists($env = base_path('.env'))) {
+        $file = $this->dispatch(new GetEnvironmentFile());
+
+        if (!file_exists($file)) {
             return $data;
         }
 
-        foreach (file($env, FILE_IGNORE_NEW_LINES) as $line) {
+        foreach (file($file, FILE_IGNORE_NEW_LINES) as $line) {
 
             // Check for # comments.
             if (starts_with($line, '#')) {
                 $data[] = $line;
-            } elseif (strpos($line, '=')) {
-                list($key, $value) = explode('=', $line);
+            } elseif ($operator = strpos($line, '=')) {
+
+                $key   = substr($line, 0, $operator);
+                $value = substr($line, $operator + 1);
 
                 $data[$key] = $value;
             }

@@ -3,15 +3,15 @@
 use Anomaly\Streams\Platform\Ui\Form\Command\GetFormCriteria;
 use Anomaly\Streams\Platform\Ui\Form\FormBuilder;
 use Anomaly\Streams\Platform\Ui\Form\FormCriteria;
-use Illuminate\Cache\Repository;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Routing\Redirector;
 
 /**
  * Class FormController
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class FormController extends PublicController
 {
@@ -40,10 +40,13 @@ class FormController extends PublicController
             ->getFormResponse();
 
         $builder->flash();
-        $cache->forget('form::' . $key);
 
         if ($response && $response->getStatusCode() !== 200) {
             return $response;
+        }
+
+        if ($builder->isAjax()) {
+            return $builder->getFormResponse();
         }
 
         if ($builder->hasFormErrors()) {

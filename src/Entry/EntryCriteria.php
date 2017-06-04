@@ -1,12 +1,16 @@
 <?php namespace Anomaly\Streams\Platform\Entry;
 
-use Anomaly\Streams\Platform\Search\SearchCriteria;
 use Anomaly\Streams\Platform\Model\EloquentCriteria;
 use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
-use Anomaly\Streams\Platform\Support\Decorator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Pagination\Paginator;
 
+/**
+ * Class EntryCriteria
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class EntryCriteria extends EloquentCriteria
 {
 
@@ -32,27 +36,6 @@ class EntryCriteria extends EloquentCriteria
     }
 
     /**
-     * Get the paginated entries.
-     *
-     * @param  array     $columns
-     * @return Paginator
-     */
-    public function paginate($perPage = 15, array $columns = ['*'])
-    {
-        $paginator = $this->query->paginate($perPage, $columns);
-
-        $model = $this->stream->getEntryModel();
-
-        $data = $paginator->toArray();
-
-        return new Paginator(
-            (new Decorator())->decorate($model->newCollection($paginator->items())),
-            $data['per_page'],
-            $data['current_page']
-        );
-    }
-
-    /**
      * Return sorted entries.
      *
      * @param  string $direction
@@ -63,19 +46,6 @@ class EntryCriteria extends EloquentCriteria
         $this->query->orderBy('sort_order', $direction);
 
         return $this;
-    }
-
-    /**
-     * Return a new search criteria.
-     *
-     * @param  string         $term
-     * @return SearchCriteria
-     */
-    public function search($term)
-    {
-        $model = $this->stream->getEntryModel();
-
-        return new SearchCriteria($model->search($term), $model);
     }
 
     /**

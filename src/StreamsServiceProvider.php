@@ -1,6 +1,9 @@
 <?php namespace Anomaly\Streams\Platform;
 
+use Anomaly\Streams\Platform\Addon\AddonCollection;
 use Anomaly\Streams\Platform\Addon\AddonManager;
+use Anomaly\Streams\Platform\Addon\Theme\Command\LoadCurrentTheme;
+use Anomaly\Streams\Platform\Application\Command\ConfigureFileCacheStore;
 use Anomaly\Streams\Platform\Application\Command\ConfigureTranslator;
 use Anomaly\Streams\Platform\Application\Command\ConfigureUriValidator;
 use Anomaly\Streams\Platform\Application\Command\InitializeApplication;
@@ -18,10 +21,12 @@ use Anomaly\Streams\Platform\Event\Booting;
 use Anomaly\Streams\Platform\Event\Ready;
 use Anomaly\Streams\Platform\Field\FieldModel;
 use Anomaly\Streams\Platform\Field\FieldObserver;
+use Anomaly\Streams\Platform\Http\Command\ConfigureRequest;
 use Anomaly\Streams\Platform\Image\Command\AddImageNamespaces;
 use Anomaly\Streams\Platform\Model\EloquentModel;
 use Anomaly\Streams\Platform\Model\EloquentObserver;
 use Anomaly\Streams\Platform\Routing\Command\IncludeRoutes;
+use Anomaly\Streams\Platform\Routing\UrlGenerator;
 use Anomaly\Streams\Platform\Search\Command\ConfigureScout;
 use Anomaly\Streams\Platform\Stream\StreamModel;
 use Anomaly\Streams\Platform\Stream\StreamObserver;
@@ -34,12 +39,21 @@ use Aptoma\Twig\Extension\MarkdownEngine\MichelfMarkdownEngine;
 use Aptoma\Twig\Extension\MarkdownExtension;
 use Asm89\Twig\CacheExtension\Extension;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Bus\DispatchesJobs;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\ServiceProvider;
 
+/**
+ * Class StreamsServiceProvider
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class StreamsServiceProvider extends ServiceProvider
 {
 
@@ -58,7 +72,7 @@ class StreamsServiceProvider extends ServiceProvider
      * @var array
      */
     protected $providers = [
-        'Anomaly\Streams\Platform\StreamsConsoleProvider',
+        //'Anomaly\Streams\Platform\StreamsConsoleProvider',
         'Anomaly\Streams\Platform\StreamsEventProvider',
     ];
 
@@ -87,6 +101,9 @@ class StreamsServiceProvider extends ServiceProvider
         'Anomaly\Streams\Platform\Stream\Console\Cleanup',
         'Anomaly\Streams\Platform\Stream\Console\Destroy',
         'Anomaly\Streams\Platform\Addon\Console\MakeAddon',
+        'Anomaly\Streams\Platform\Addon\Console\AddonInstall',
+        'Anomaly\Streams\Platform\Addon\Console\AddonUninstall',
+        'Anomaly\Streams\Platform\Addon\Console\AddonReinstall',
         'Anomaly\Streams\Platform\Installer\Console\Install',
         'Anomaly\Streams\Platform\Application\Console\EnvSet',
         'Anomaly\Streams\Platform\Addon\Console\AddonPublish',
@@ -109,6 +126,7 @@ class StreamsServiceProvider extends ServiceProvider
         'Illuminate\Contracts\Debug\ExceptionHandler'                                    => 'Anomaly\Streams\Platform\Exception\ExceptionHandler',
         'Illuminate\Routing\UrlGenerator'                                                => 'Anomaly\Streams\Platform\Routing\UrlGenerator',
         'Illuminate\Contracts\Routing\UrlGenerator'                                      => 'Anomaly\Streams\Platform\Routing\UrlGenerator',
+        'GrahamCampbell\Exceptions\Displayers\ViewDisplayer'                             => 'Anomaly\Streams\Platform\Exception\Displayer\ViewDisplayer',
         'Anomaly\Streams\Platform\Entry\EntryModel'                                      => 'Anomaly\Streams\Platform\Entry\EntryModel',
         'Anomaly\Streams\Platform\Entry\Contract\EntryRepositoryInterface'               => 'Anomaly\Streams\Platform\Entry\EntryRepository',
         'Anomaly\Streams\Platform\Field\FieldModel'                                      => 'Anomaly\Streams\Platform\Field\FieldModel',
@@ -144,12 +162,14 @@ class StreamsServiceProvider extends ServiceProvider
         'Anomaly\Streams\Platform\Addon\AddonLoader'                                         => 'Anomaly\Streams\Platform\Addon\AddonLoader',
         'Anomaly\Streams\Platform\Addon\AddonBinder'                                         => 'Anomaly\Streams\Platform\Addon\AddonBinder',
         'Anomaly\Streams\Platform\Addon\AddonManager'                                        => 'Anomaly\Streams\Platform\Addon\AddonManager',
+        'Anomaly\Streams\Platform\Addon\AddonProvider'                                       => 'Anomaly\Streams\Platform\Addon\AddonProvider',
         'Anomaly\Streams\Platform\Addon\AddonCollection'                                     => 'Anomaly\Streams\Platform\Addon\AddonCollection',
         'Anomaly\Streams\Platform\Message\MessageBag'                                        => 'Anomaly\Streams\Platform\Message\MessageBag',
         'Anomaly\Streams\Platform\Stream\StreamStore'                                        => 'Anomaly\Streams\Platform\Stream\StreamStore',
         'Anomaly\Streams\Platform\Support\Configurator'                                      => 'Anomaly\Streams\Platform\Support\Configurator',
         'Anomaly\Streams\Platform\Support\Authorizer'                                        => 'Anomaly\Streams\Platform\Support\Authorizer',
         'Anomaly\Streams\Platform\Support\Evaluator'                                         => 'Anomaly\Streams\Platform\Support\Evaluator',
+        'Anomaly\Streams\Platform\Support\Currency'                                          => 'Anomaly\Streams\Platform\Support\Currency',
         'Anomaly\Streams\Platform\Support\Parser'                                            => 'Anomaly\Streams\Platform\Support\Parser',
         'Anomaly\Streams\Platform\Support\Hydrator'                                          => 'Anomaly\Streams\Platform\Support\Hydrator',
         'Anomaly\Streams\Platform\Support\Resolver'                                          => 'Anomaly\Streams\Platform\Support\Resolver',
@@ -187,6 +207,9 @@ class StreamsServiceProvider extends ServiceProvider
         'Anomaly\Streams\Platform\View\Listener\LoadTemplateData'                            => 'Anomaly\Streams\Platform\View\Listener\LoadTemplateData',
         'Anomaly\Streams\Platform\View\Listener\DecorateData'                                => 'Anomaly\Streams\Platform\View\Listener\DecorateData',
         'Anomaly\Streams\Platform\Support\Template'                                          => 'Anomaly\Streams\Platform\Support\Template',
+        'Anomaly\Streams\Platform\Support\Purifier'                                          => 'Anomaly\Streams\Platform\Support\Purifier',
+        'Anomaly\Streams\Platform\Assignment\AssignmentRouter'                               => 'Anomaly\Streams\Platform\Assignment\AssignmentRouter',
+        'Anomaly\Streams\Platform\Field\FieldRouter'                                         => 'Anomaly\Streams\Platform\Field\FieldRouter',
     ];
 
     /**
@@ -196,21 +219,22 @@ class StreamsServiceProvider extends ServiceProvider
     {
         $events->fire(new Booting());
 
-        // First load our app environment.
-        $this->dispatch(new LoadEnvironmentOverrides());
-
         // Next take care of core utilities.
         $this->dispatch(new SetCoreConnection());
         $this->dispatch(new ConfigureUriValidator());
         $this->dispatch(new InitializeApplication());
 
+        // Load application specific .env file.
+        $this->dispatch(new LoadEnvironmentOverrides());
+
         // Setup and preparing utilities.
         $this->dispatch(new LoadStreamsConfiguration());
+        $this->dispatch(new ConfigureFileCacheStore());
         $this->dispatch(new ConfigureTranslator());
         $this->dispatch(new AutoloadEntryModels());
         $this->dispatch(new AddAssetNamespaces());
         $this->dispatch(new AddImageNamespaces());
-        $this->dispatch(new AddViewNamespaces());
+        $this->dispatch(new ConfigureRequest());
         $this->dispatch(new ConfigureScout());
 
         // Observe our base models.
@@ -222,6 +246,7 @@ class StreamsServiceProvider extends ServiceProvider
 
         $this->app->booted(
             function () use ($events) {
+
                 $events->fire(new Booted());
 
                 /* @var AddonManager $manager */
@@ -257,6 +282,9 @@ class StreamsServiceProvider extends ServiceProvider
 
                 $manager->register();
 
+                $this->dispatch(new LoadCurrentTheme());
+                $this->dispatch(new AddViewNamespaces());
+
                 /*
                  * Do this after addons are registered
                  * so that they can override named routes.
@@ -283,6 +311,7 @@ class StreamsServiceProvider extends ServiceProvider
         $this->app->register(\Collective\Html\HtmlServiceProvider::class);
         $this->app->register(\Intervention\Image\ImageServiceProvider::class);
         $this->app->register(\TeamTNT\Scout\TNTSearchScoutServiceProvider::class);
+        $this->app->register(\GrahamCampbell\Exceptions\ExceptionsServiceProvider::class);
 
         if (env('APP_DEBUG')) {
             $this->app->register(\Barryvdh\Debugbar\ServiceProvider::class);
@@ -307,17 +336,18 @@ class StreamsServiceProvider extends ServiceProvider
         $this->commands(array_merge($this->commands, config('streams.commands', [])));
 
         /* @var Schedule $schedule */
-        $schedule = $this->app->make(Schedule::class);
-
-        foreach (array_merge($this->schedule, config('streams.schedule', [])) as $frequency => $commands) {
-            foreach (array_filter($commands) as $command) {
-                if (str_contains($frequency, ' ')) {
-                    $schedule->command($command)->cron($frequency);
-                } else {
-                    $schedule->command($command)->{camel_case($frequency)}();
-                }
-            }
-        }
+        // @todo: Broken as shit
+//        $schedule = $this->app->make(Schedule::class);
+//
+//        foreach (array_merge($this->schedule, config('streams.schedule', [])) as $frequency => $commands) {
+//            foreach (array_filter($commands) as $command) {
+//                if (str_contains($frequency, ' ')) {
+//                    $schedule->command($command)->cron($frequency);
+//                } else {
+//                    $schedule->command($command)->{camel_case($frequency)}();
+//                }
+//            }
+//        }
 
         /*
          * Change the default language path so
@@ -353,6 +383,23 @@ class StreamsServiceProvider extends ServiceProvider
 
             return;
         }
+
+        $this->app->bind('twig.loader.viewfinder', function (Container $app) {
+            return $app->makeWith('Anomaly\Streams\Platform\View\Twig\Loader', [
+                'files' => $this->app['files'],
+                'finder' => $this->app['view']->getFinder(),
+                'extension' => $this->app['twig.extension']
+            ]);
+        });
+
+        /**
+         * Correct path for Paginator.
+         */
+        Paginator::currentPathResolver(
+            function () {
+                return $this->app->make(UrlGenerator::class)->current();
+            }
+        );
 
         /*
          * Register system routes.

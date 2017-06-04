@@ -6,9 +6,9 @@ use Anomaly\Streams\Platform\Ui\Tree\Component\Segment\Contract\SegmentInterface
 /**
  * Class SegmentFactory
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class SegmentFactory
 {
@@ -45,7 +45,7 @@ class SegmentFactory
      */
     public function make(array $parameters)
     {
-        $segment = app()->make(array_get($parameters, 'segment', $this->segment), $parameters);
+        $segment = app()->makeWith(array_get($parameters, 'segment', $this->segment), $parameters);
 
         $this->hydrator->hydrate($segment, $parameters);
 

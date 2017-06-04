@@ -7,9 +7,9 @@ use Illuminate\Contracts\Config\Repository;
 /**
  * Class SetDatabaseData
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class SetDatabaseData
 {
@@ -46,16 +46,16 @@ class SetDatabaseData
     public function handle()
     {
         $this->data->put(
-            'DB_DRIVER',
+            'DB_CONNECTION',
             $this->command->askWithCompletion(
-                'What database driver would you like to use? [mysql, postgres, sqlite, sqlsrv]',
+                'What database driver would you like to use? [mysql, pgsql, sqlite, sqlsrv]',
                 [
                     'mysql',
-                    'postgres',
+                    'pgsql',
                     'sqlite',
                     'sqlsrv',
                 ],
-                env('DB_DRIVER', 'mysql')
+                env('DB_CONNECTION', 'mysql')
             )
         );
 

@@ -5,9 +5,9 @@ use Illuminate\Session\Store;
 /**
  * Class MessageBag
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class MessageBag
 {
@@ -49,7 +49,7 @@ class MessageBag
 
         $messages = array_unique($messages);
 
-        $this->session->set($type, $messages);
+        $this->session->put($type, $messages);
     }
 
     /**
@@ -67,7 +67,7 @@ class MessageBag
      * Get messages.
      *
      * @param $type
-     * @return bool
+     * @return array
      */
     public function get($type)
     {

@@ -7,9 +7,9 @@ use Illuminate\Http\Request;
 /**
  * Class AssetPaths
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class AssetPaths
 {
@@ -58,7 +58,30 @@ class AssetPaths
     }
 
     /**
-     * Add an asset path hint.
+     * Get the paths.
+     *
+     * @return array|mixed
+     */
+    public function getPaths()
+    {
+        return $this->paths;
+    }
+
+    /**
+     * Set the paths.
+     *
+     * @param  array $paths
+     * @return $this
+     */
+    public function setPaths(array $paths)
+    {
+        $this->paths = $paths;
+
+        return $this;
+    }
+
+    /**
+     * Add an image path hint.
      *
      * @param $namespace
      * @param $path
@@ -66,9 +89,20 @@ class AssetPaths
      */
     public function addPath($namespace, $path)
     {
-        $this->paths[$namespace] = $path;
+        $this->paths[$namespace] = rtrim($path, '/\\');
 
         return $this;
+    }
+
+    /**
+     * Get a single path.
+     *
+     * @param $namespace
+     * @return string|null
+     */
+    public function getPath($namespace)
+    {
+        return array_get($this->paths, $namespace);
     }
 
     /**
@@ -111,13 +145,18 @@ class AssetPaths
     public function realPath($path)
     {
         if (str_contains($path, '::')) {
+
             list($namespace, $path) = explode('::', $path);
 
             if (!isset($this->paths[$namespace])) {
                 throw new \Exception("Path hint [{$namespace}::{$path}] does not exist!");
             }
 
-            return rtrim($this->paths[$namespace], '/') . '/' . $path;
+            $path = rtrim($this->paths[$namespace], '/') . '/' . $path;
+        }
+
+        if (strpos($path, '?v=')) {
+            $path = substr($path, 0, strpos($path, '?v='));
         }
 
         return $path;
@@ -176,15 +215,5 @@ class AssetPaths
         }
 
         return "/app/{$application}/assets/{$directory}{$filename}";
-    }
-
-    /**
-     * Return the path prefix.
-     *
-     * @return string
-     */
-    public function prefix()
-    {
-        return rtrim(array_get(parse_url($this->request->root()), 'path'), '/');
     }
 }

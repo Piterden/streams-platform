@@ -5,6 +5,13 @@ use Symfony\Component\Console\Input\InputOption;
 use Anomaly\Streams\Platform\Database\Migration\Migrator;
 use Anomaly\Streams\Platform\Database\Migration\Console\Command\ConfigureMigrator;
 
+/**
+ * Class ResetCommand
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class ResetCommand extends \Illuminate\Database\Console\Migrations\ResetCommand
 {
     use DispatchesJobs;

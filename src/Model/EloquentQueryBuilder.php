@@ -3,18 +3,27 @@
 use Anomaly\Streams\Platform\Assignment\AssignmentModel;
 use Anomaly\Streams\Platform\Collection\CacheCollection;
 use Anomaly\Streams\Platform\Entry\Contract\EntryInterface;
-use Database\Query\JoinClause;
+use Anomaly\Streams\Platform\Entry\EntryModel;
+use Anomaly\Streams\Platform\Stream\StreamModel;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\JoinClause;
 
 /**
  * Class EloquentQueryBuilder
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class EloquentQueryBuilder extends Builder
 {
+
+    /**
+     * Runtime cache.
+     *
+     * @var array
+     */
+    protected static $cache = [];
 
     /**
      * The model being queried.
@@ -26,32 +35,43 @@ class EloquentQueryBuilder extends Builder
     /**
      * Execute the query as a "select" statement.
      *
-     * @param  array                                             $columns
+     * @param  array $columns
      * @return \Illuminate\Database\Eloquent\Collection|static[]
      */
     public function get($columns = ['*'])
     {
+        $key = $this->getCacheKey();
+
+        if (
+            env('INSTALLED')
+            && PHP_SAPI != 'cli'
+            && env('DB_CACHE') !== false
+            && $this->model instanceof EntryModel
+            && isset(self::$cache[$this->model->getCacheCollectionKey()][$key])
+        ) {
+            return self::$cache[$this->model->getCacheCollectionKey()][$key];
+        }
+
         $this->orderByDefault();
 
-        if (env('DB_CACHE')) {
+        if (PHP_SAPI != 'cli' && env('DB_CACHE') !== false && $this->model->getTtl()) {
+
             $this->rememberIndex();
 
-            if ($this->model->getTtl()) {
-                try {
-                    return app('cache')->remember(
-                        $this->getCacheKey(),
-                        $this->model->getTtl(),
-                        function () use ($columns) {
-                            return parent::get($columns);
-                        }
-                    );
-                } catch (\Exception $e) {
-                    return parent::get($columns);
-                }
+            try {
+                return app('cache')->remember(
+                    $this->getCacheKey(),
+                    $this->model->getTtl(),
+                    function () use ($columns) {
+                        return parent::get($columns);
+                    }
+                );
+            } catch (\Exception $e) {
+                return parent::get($columns);
             }
         }
 
-        return parent::get($columns);
+        return self::$cache[$this->model->getCacheCollectionKey()][$key] = parent::get($columns);
     }
 
     /**
@@ -103,6 +123,17 @@ class EloquentQueryBuilder extends Builder
             ->index();
 
         return $this;
+    }
+
+    /**
+     * Drop a cache collection
+     * from runtime cache.
+     *
+     * @param $collection
+     */
+    public static function dropRuntimeCache($collection)
+    {
+        unset(self::$cache[$collection]);
     }
 
     /**
@@ -189,10 +220,24 @@ class EloquentQueryBuilder extends Builder
         if ($query->orders === null) {
             if ($model instanceof AssignmentModel) {
                 $query->orderBy('sort_order', 'ASC');
+            } elseif ($model instanceof StreamModel) {
+                $query->orderBy('sort_order', 'ASC');
             } elseif ($model instanceof EntryInterface) {
                 if ($model->getStream()->isSortable()) {
                     $query->orderBy('sort_order', 'ASC');
                 } elseif ($model->titleColumnIsTranslatable()) {
+
+                    /**
+                     * Postgres makes it damn near impossible
+                     * to order by a foreign column and retain
+                     * distinct results so let's avoid it entirely.
+                     *
+                     * Sorry!
+                     */
+                    if (env('DB_CONNECTION', 'mysql') == 'pgsql') {
+                        return;
+                    }
+
                     if (!$this->hasJoin($model->getTranslationsTableName())) {
                         $this->query->leftJoin(
                             $model->getTranslationsTableName(),
@@ -203,8 +248,18 @@ class EloquentQueryBuilder extends Builder
                     }
 
                     $this
+                        ->groupBy($model->getTableName() . '.id')
                         ->select($model->getTableName() . '.*')
-                        ->where($model->getTranslationsTableName() . '.locale', config('app.fallback_locale'))
+                        ->where(
+                            function (Builder $query) use ($model) {
+                                $query->where($model->getTranslationsTableName() . '.locale', config('app.locale'));
+                                $query->orWhere(
+                                    $model->getTranslationsTableName() . '.locale',
+                                    config('app.fallback_locale')
+                                );
+                                $query->orWhereNull($model->getTranslationsTableName() . '.locale');
+                            }
+                        )
                         ->orderBy($model->getTranslationsTableName() . '.' . $model->getTitleName(), 'ASC');
                 } elseif ($model->getTitleName() && $model->getTitleName() !== 'id') {
                     $query->orderBy($model->getTitleName(), 'ASC');

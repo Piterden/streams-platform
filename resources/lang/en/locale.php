@@ -88,6 +88,9 @@ return [
     'th'    => [
         'name' => 'Thai'
     ],
+    'tr'    => [
+        'name' => 'Turkish'
+    ],
     'bn'    => [
         'name' => 'Bengali'
     ],
@@ -102,5 +105,8 @@ return [
     ],
     'zh-tw' => [
         'name' => 'Chinese (Taiwan)'
+    ],
+    'vi' => [
+        'name' => 'Vietnamese'
     ],
 ];

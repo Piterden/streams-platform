@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * Class FilterQuery
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class FilterQuery
 {
@@ -41,6 +41,13 @@ class FilterQuery
      */
     public function filter(TableBuilder $builder, FilterInterface $filter, Builder $query)
     {
+
+        /**
+         * Make sure we're including
+         * only distinct results.
+         */
+        $query->distinct();
+
         /*
          * If the filter is self handling then let
          * it filter the query itself.

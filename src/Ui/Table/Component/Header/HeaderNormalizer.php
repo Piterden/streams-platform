@@ -5,9 +5,9 @@ use Anomaly\Streams\Platform\Ui\Table\TableBuilder;
 /**
  * Class HeaderNormalizer
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class HeaderNormalizer
 {
@@ -42,8 +42,8 @@ class HeaderNormalizer
              */
             if (!is_numeric($key) && !is_array($column) && !class_exists($column)) {
                 $column = [
-                    'heading' => $key,
-                    'value'   => $column,
+                    'value' => $column,
+                    'field' => $key,
                 ];
             }
 

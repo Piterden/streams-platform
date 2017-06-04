@@ -1,30 +1,37 @@
 <?php namespace Anomaly\Streams\Platform\Asset;
 
-use Anomaly\Streams\Platform\Routing\UrlGenerator;
+use Anomaly\Streams\Platform\Addon\Theme\ThemeCollection;
 use Anomaly\Streams\Platform\Application\Application;
-use Anomaly\Streams\Platform\Asset\Filter\LessFilter;
-use Anomaly\Streams\Platform\Asset\Filter\ScssFilter;
-use Anomaly\Streams\Platform\Asset\Filter\SassFilter;
-use Anomaly\Streams\Platform\Asset\Filter\JsMinFilter;
-use Anomaly\Streams\Platform\Asset\Filter\ParseFilter;
 use Anomaly\Streams\Platform\Asset\Filter\CoffeeFilter;
 use Anomaly\Streams\Platform\Asset\Filter\CssMinFilter;
-use Anomaly\Streams\Platform\Asset\Filter\StylusFilter;
-use Anomaly\Streams\Platform\Addon\Theme\ThemeCollection;
+use Anomaly\Streams\Platform\Asset\Filter\JsMinFilter;
+use Anomaly\Streams\Platform\Asset\Filter\LessFilter;
 use Anomaly\Streams\Platform\Asset\Filter\NodeLessFilter;
-use Anomaly\Streams\Platform\Asset\Filter\RubyScssFilter;
+use Anomaly\Streams\Platform\Asset\Filter\ParseFilter;
 use Anomaly\Streams\Platform\Asset\Filter\RubySassFilter;
+use Anomaly\Streams\Platform\Asset\Filter\RubyScssFilter;
+use Anomaly\Streams\Platform\Asset\Filter\SassFilter;
+use Anomaly\Streams\Platform\Asset\Filter\ScssFilter;
 use Anomaly\Streams\Platform\Asset\Filter\SeparatorFilter;
-use Assetic\Filter\PhpCssEmbedFilter;
-use Illuminate\Filesystem\Filesystem;
-use League\Flysystem\MountManager;
+use Anomaly\Streams\Platform\Asset\Filter\StylusFilter;
+use Anomaly\Streams\Platform\Routing\UrlGenerator;
 use Assetic\Asset\AssetCollection;
-use Illuminate\Config\Repository;
-use Collective\Html\HtmlBuilder;
-use Illuminate\Http\Request;
 use Assetic\Asset\FileAsset;
 use Assetic\Asset\GlobAsset;
+use Assetic\Filter\PhpCssEmbedFilter;
+use Collective\Html\HtmlBuilder;
+use Illuminate\Contracts\Config\Repository;
+use Illuminate\Filesystem\Filesystem;
+use Illuminate\Http\Request;
+use League\Flysystem\MountManager;
 
+/**
+ * Class Asset
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class Asset
 {
 
@@ -111,7 +118,7 @@ class Asset
     /**
      * The config repository.
      *
-     * @var array
+     * @var Repository
      */
     protected $config;
 
@@ -221,7 +228,7 @@ class Asset
             $this->files->put($path, file_get_contents($url));
         }
 
-        return str_replace(public_path(), '', $path);
+        return $path;
     }
 
     /**
@@ -233,7 +240,9 @@ class Asset
      */
     public function inline($collection, array $filters = [])
     {
-        return file_get_contents($this->paths->realPath('public::' . ltrim($this->path($collection, $filters), '/\\')));
+        return file_get_contents(
+            $this->paths->realPath('public::' . ltrim($this->path($collection, $filters), '/\\'))
+        );
     }
 
     /**
@@ -269,7 +278,23 @@ class Asset
             $this->add($collection, $collection, $filters);
         }
 
-        return $this->getPath($collection, $filters);
+        return $this->request->getBasePath() . $this->getPath($collection, $filters);
+    }
+
+    /**
+     * Return the asset path to a compiled asset collection.
+     *
+     * @param         $collection
+     * @param  array  $filters
+     * @return string
+     */
+    public function asset($collection, array $filters = [])
+    {
+        if (!isset($this->collections[$collection])) {
+            $this->add($collection, $collection, $filters);
+        }
+
+        return $this->path($collection, $filters);
     }
 
     /**
@@ -301,7 +326,7 @@ class Asset
 
         $attributes = $attributes + $defaults;
 
-        $attributes['href'] = $this->path($collection, $filters);
+        $attributes['href'] = $this->asset($collection, $filters);
 
         return '<link' . $this->html->attributes($attributes) . '>';
     }
@@ -372,7 +397,7 @@ class Asset
                 function ($file, $filters) use ($additionalFilters) {
                     $filters = array_filter(array_unique(array_merge($filters, $additionalFilters)));
 
-                    return $this->path($file, $filters);
+                    return $this->asset($file, $filters);
                 },
                 array_keys($this->collections[$collection]),
                 array_values($this->collections[$collection])
@@ -386,13 +411,14 @@ class Asset
      * @param        $collection
      * @param  array $filters
      * @param  array $attributes
+     * @param null   $secure
      * @return array
      */
-    public function urls($collection, array $filters = [], array $attributes = [])
+    public function urls($collection, array $filters = [], array $attributes = [], $secure = null)
     {
         return array_map(
-            function ($path) use ($attributes) {
-                return $this->url($path);
+            function ($path) use ($attributes, $secure) {
+                return $this->url($path, [], $attributes, $secure);
             },
             $this->paths($collection, $filters)
         );
@@ -418,7 +444,14 @@ class Asset
             $this->publish($path, $collection, $filters);
         }
 
-        return $this->paths->prefix() . $path;
+        if (
+            !in_array('noversion', $filters) &&
+            ($this->config->get('streams::assets.version') || in_array('version', $filters))
+        ) {
+            $path .= '?v=' . filemtime(public_path(trim($path, '/\\')));
+        }
+
+        return $path;
     }
 
     /**
@@ -432,9 +465,9 @@ class Asset
     public function getCollectionPath($collection)
     {
         return ($this->request->segment(1) == 'admin' ? 'admin' : 'public') . '/' . ltrim(
-            str_replace(base_path(), '', $this->paths->realPath($collection)),
-            '/\\'
-        );
+                str_replace(base_path(), '', $this->paths->realPath($collection)),
+                '/\\'
+            );
     }
 
     /**
@@ -454,7 +487,7 @@ class Asset
 
         $assets = $this->getAssetCollection($collection, $additionalFilters);
 
-        $path = $this->directory . $path;
+        $path = $this->directory . DIRECTORY_SEPARATOR . $path;
 
         $this->files->makeDirectory((new \SplFileInfo($path))->getPath(), 0777, true, true);
 
@@ -462,7 +495,12 @@ class Asset
 
         if ($this->paths->extension($path) == 'css') {
             try {
-                $this->files->put($path, app('twig')->render(str_replace($this->directory, 'assets::', $path)));
+                $this->files->put(
+                    $path,
+                    app('twig')->render(
+                        str_replace($this->application->getAssetsPath(DIRECTORY_SEPARATOR), 'assets::', $path)
+                    )
+                );
             } catch (\Exception $e) {
                 // Don't even..
             }
@@ -682,6 +720,10 @@ class Asset
             return true;
         }
 
+        if ($this->request->isNoCache() && $this->lastModifiedAt('theme::') > filemtime($path)) {
+            return true;
+        }
+
         // Merge filters from collection files.
         foreach ($this->collections[$collection] as $fileFilters) {
             $filters = array_filter(array_unique(array_merge($filters, $fileFilters)));
@@ -695,6 +737,21 @@ class Asset
         }
 
         return true;
+    }
+
+    /**
+     * Get the last modified time.
+     *
+     * @return integer
+     */
+    public function lastModifiedAt($path)
+    {
+        $files = glob($this->paths->realPath($path) . '/*');
+        $files = array_combine($files, array_map("filemtime", $files));
+
+        arsort($files);
+
+        return array_shift($files);
     }
 
     /**

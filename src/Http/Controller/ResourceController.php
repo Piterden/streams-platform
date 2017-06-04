@@ -3,9 +3,9 @@
 /**
  * Class ResourceController
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class ResourceController extends PublicController
 {
@@ -18,6 +18,11 @@ class ResourceController extends PublicController
         parent::__construct();
 
         // No CSRF protection.
-        unset($this->middleware['Anomaly\Streams\Platform\Http\Middleware\VerifyCsrfToken']);
+        $this->middleware = array_filter(
+            $this->middleware,
+            function ($item) {
+                return $item['middleware'] != 'Illuminate\Foundation\Http\Middleware\VerifyCsrfToken';
+            }
+        );
     }
 }

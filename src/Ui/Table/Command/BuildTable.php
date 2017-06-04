@@ -14,12 +14,13 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 /**
  * Class BuildTable
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class BuildTable
 {
+
     use DispatchesJobs;
 
     /**
@@ -52,6 +53,15 @@ class BuildTable
         $this->dispatch(new SetDefaultParameters($this->builder));
         $this->dispatch(new SetRepository($this->builder));
 
+        /*
+         * Build table views and mark active.
+         */
+        $this->dispatch(new BuildViews($this->builder));
+        $this->dispatch(new SetActiveView($this->builder));
+
+        /**
+         * Set the table options going forward.
+         */
         $this->dispatch(new SetTableOptions($this->builder));
         $this->dispatch(new SetDefaultOptions($this->builder));
         $this->dispatch(new SaveTableState($this->builder));
@@ -60,12 +70,6 @@ class BuildTable
          * Before we go any further, authorize the request.
          */
         $this->dispatch(new AuthorizeTable($this->builder));
-
-        /*
-         * Build table views and mark active.
-         */
-        $this->dispatch(new BuildViews($this->builder));
-        $this->dispatch(new SetActiveView($this->builder));
 
         /*
          * Build table filters and flag active.

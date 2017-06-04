@@ -4,6 +4,7 @@ use Anomaly\Streams\Platform\Asset\Asset;
 use Anomaly\Streams\Platform\Event\Response;
 use Anomaly\Streams\Platform\Message\MessageBag;
 use Anomaly\Streams\Platform\Routing\UrlGenerator;
+use Anomaly\Streams\Platform\Traits\FiresCallbacks;
 use Anomaly\Streams\Platform\Ui\Breadcrumb\BreadcrumbCollection;
 use Anomaly\Streams\Platform\View\ViewTemplate;
 use Illuminate\Contracts\Container\Container;
@@ -16,9 +17,18 @@ use Illuminate\Routing\Controller;
 use Illuminate\Routing\Redirector;
 use Illuminate\Routing\Route;
 
+/**
+ * Class BaseController
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class BaseController extends Controller
 {
+
     use DispatchesJobs;
+    use FiresCallbacks;
 
     /**
      * The service container.
@@ -132,8 +142,9 @@ class BaseController extends Controller
 
         // These may be manipulated by the middleware above.
         $this->middleware('Illuminate\Foundation\Http\Middleware\VerifyCsrfToken');
-        $this->middleware('Anomaly\Streams\Platform\Http\Middleware\ApplicationReady');
-        $this->middleware('Anomaly\Streams\Platform\Http\Middleware\SetLocale');
         $this->middleware('Anomaly\Streams\Platform\Http\Middleware\PoweredBy');
+        
+        $this->middleware('Anomaly\Streams\Platform\Http\Middleware\SetLocale');
+        $this->middleware('Anomaly\Streams\Platform\Http\Middleware\ApplicationReady');
     }
 }

@@ -3,6 +3,13 @@
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider;
 
+/**
+ * Class StreamsEventProvider
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class StreamsEventProvider extends EventServiceProvider
 {
 
@@ -19,9 +26,6 @@ class StreamsEventProvider extends EventServiceProvider
             'Anomaly\Streams\Platform\Ui\Breadcrumb\Listener\GuessBreadcrumbs',
             'Anomaly\Streams\Platform\Ui\Breadcrumb\Listener\LoadBreadcrumbs',
             'Anomaly\Streams\Platform\Message\Listener\LoadMessageBag',
-        ],
-        'Anomaly\Streams\Platform\Event\Ready'                            => [
-            'Anomaly\Streams\Platform\Addon\Theme\Listener\LoadCurrentTheme' => -100,
         ],
         'Anomaly\Streams\Platform\Addon\Event\AddonsHaveRegistered'       => [
             'Anomaly\Streams\Platform\Asset\Listener\AddAddonPaths',

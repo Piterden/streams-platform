@@ -5,6 +5,7 @@ use Anomaly\Streams\Platform\Entry\Contract\EntryInterface;
 use Anomaly\Streams\Platform\Field\Contract\FieldInterface;
 use Anomaly\Streams\Platform\Model\EloquentModel;
 use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
+use Anomaly\Streams\Platform\Ui\Form\Command\SetSuccessMessage;
 use Anomaly\Streams\Platform\Ui\Form\Form;
 use Anomaly\Streams\Platform\Ui\Form\FormBuilder;
 use Anomaly\Streams\Platform\Ui\Form\FormCollection;
@@ -13,6 +14,13 @@ use Anomaly\Streams\Platform\Ui\Form\Multiple\Command\HandleErrors;
 use Anomaly\Streams\Platform\Ui\Form\Multiple\Command\MergeFields;
 use Anomaly\Streams\Platform\Ui\Form\Multiple\Command\PostForms;
 
+/**
+ * Class MultipleFormBuilder
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class MultipleFormBuilder extends FormBuilder
 {
 
@@ -26,7 +34,7 @@ class MultipleFormBuilder extends FormBuilder
     /**
      * Create a new MultipleFormBuilder instance.
      *
-     * @param Form           $form
+     * @param Form $form
      * @param FormCollection $forms
      */
     public function __construct(Form $form, FormCollection $forms)
@@ -45,11 +53,46 @@ class MultipleFormBuilder extends FormBuilder
     public function build($entry = null)
     {
         $this->dispatch(new BuildForms($this));
-        $this->dispatch(new PostForms($this));
         $this->dispatch(new MergeFields($this));
-        $this->dispatch(new HandleErrors($this));
 
         parent::build($entry);
+
+        return $this;
+    }
+
+    /**
+     * Post the form.
+     *
+     * @return $this
+     */
+    public function post()
+    {
+        if (app('request')->isMethod('post')) {
+            $this->dispatch(new PostForms($this));
+            $this->dispatch(new HandleErrors($this));
+        }
+
+        parent::post();
+
+        return $this;
+    }
+
+    /**
+     * Validate child forms.
+     *
+     * @return $this
+     */
+    public function validate()
+    {
+        $this->forms->map(
+            function ($form) {
+
+                /* @var FormBuilder $form */
+                $form->validate();
+            }
+        );
+
+        $this->dispatch(new HandleErrors($this));
 
         return $this;
     }
@@ -100,7 +143,7 @@ class MultipleFormBuilder extends FormBuilder
      * Add a form.
      *
      * @param                      $key
-     * @param  FormBuilder         $builder
+     * @param  FormBuilder $builder
      * @return MultipleFormBuilder
      */
     public function addForm($key, FormBuilder $builder)

@@ -5,9 +5,9 @@ use Anomaly\Streams\Platform\Ui\Table\TableBuilder;
 /**
  * Class FilterBuilder
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class FilterBuilder
 {
@@ -50,6 +50,7 @@ class FilterBuilder
         $this->input->read($builder);
 
         foreach ($builder->getFilters() as $filter) {
+
             if (array_get($filter, 'enabled') === false) {
                 continue;
             }

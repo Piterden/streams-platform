@@ -37,7 +37,12 @@ return [
 
     'supported' => [
         'USD' => [
-            'symbol' => '$'
-        ]
-    ]
+            'name'      => 'US Dollar',
+            'direction' => 'ltr',
+            'symbol'    => '$',
+            'separator' => ',',
+            'point'     => '.',
+            'decimals'  => 2,
+        ],
+    ],
 ];

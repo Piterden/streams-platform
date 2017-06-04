@@ -5,9 +5,9 @@ use Anomaly\Streams\Platform\Ui\Table\TableBuilder;
 /**
  * Class ButtonNormalizer
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class ButtonNormalizer
 {
@@ -95,7 +95,7 @@ class ButtonNormalizer
         if (
             isset($button['attributes']['href']) &&
             is_string($button['attributes']['href']) &&
-            !starts_with($button['attributes']['href'], 'http')
+            !starts_with($button['attributes']['href'], ['http', '{'])
         ) {
             $button['attributes']['href'] = url($button['attributes']['href']);
         }

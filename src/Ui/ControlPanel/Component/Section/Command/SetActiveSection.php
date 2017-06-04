@@ -9,9 +9,9 @@ use Illuminate\Http\Request;
 /**
  * Class SetActiveSection
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class SetActiveSection
 {
@@ -55,6 +55,7 @@ class SetActiveSection
 
         /* @var SectionInterface $section */
         foreach ($sections as $section) {
+
             if (($matcher = $section->getMatcher()) && str_is($matcher, $request->path())) {
                 $active = $section;
             }

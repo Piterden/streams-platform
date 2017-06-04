@@ -11,9 +11,9 @@ use Illuminate\Translation\Translator;
 /**
  * Class TextGuesser
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class TextGuesser
 {
@@ -114,7 +114,7 @@ class TextGuesser
                 (!isset($button['text']) || !$this->translator->has($button['text']))
                 && $this->config->get('streams::system.lazy_translations')
             ) {
-                $button['text'] = $this->string->humanize(array_get($button, 'slug', $button['button']));
+                $button['text'] = ucwords($this->string->humanize(array_get($button, 'slug', $button['button'])));
             }
 
             if (!isset($button['text'])) {

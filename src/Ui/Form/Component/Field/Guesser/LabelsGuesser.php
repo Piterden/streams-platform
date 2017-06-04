@@ -9,9 +9,9 @@ use Illuminate\Contracts\Config\Repository;
 /**
  * Class LabelsGuesser
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class LabelsGuesser
 {
@@ -183,7 +183,7 @@ class LabelsGuesser
              * in leu of displaying an untranslated key.
              */
             if (!isset($field['label']) && $this->config->get('streams::system.lazy_translations')) {
-                $field['label'] = $this->string->humanize($field['field']);
+                $field['label'] = ucwords($this->string->humanize($field['field']));
             }
         }
 

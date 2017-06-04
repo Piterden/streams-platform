@@ -17,6 +17,7 @@ return [
     ],
     'description'     => [
         'type'   => 'anomaly.field_type.text',
+        'bind'   => 'app.description',
         'config' => [
             'default_value' => function (Repository $config) {
                 return $config->get('streams::distribution.description');
@@ -62,42 +63,47 @@ return [
         ],
     ],
     'date_format'     => [
-        'env'      => 'DATE_FORMAT',
-        'bind'     => 'streams::datetime.date_format',
-        'type'     => 'anomaly.field_type.select',
-        'required' => true,
-        'config'   => [
+        'env'         => 'DATE_FORMAT',
+        'bind'        => 'streams::datetime.date_format',
+        'type'        => 'anomaly.field_type.select',
+        'placeholder' => false,
+        'required'    => true,
+        'config'      => [
             'options' => [
-                'l, j F, Y' => function () {
-                    return date('l, j F, Y'); // Friday, 10 July, 2015
-                },
-                'j F, Y'    => function () {
+                'j F, Y' => function () {
                     return date('j F, Y'); // 10 July, 2015
                 },
-                'j M, y'    => function () {
+                'j M, y' => function () {
                     return date('j M, y'); // 10 Jul, 15
                 },
-                'm/d/Y'     => function () {
+                'm/d/Y'  => function () {
                     return date('m/d/Y'); // 07/10/2015
                 },
-                'Y-m-d'     => function () {
+                'd/m/Y'  => function () {
+                    return date('d/m/Y'); // 10/07/2015
+                },
+                'Y-m-d'  => function () {
                     return date('Y-m-d'); // 2015-07-10
                 },
             ],
         ],
     ],
     'time_format'     => [
-        'env'      => 'TIME_FORMAT',
-        'bind'     => 'streams::datetime.time_format',
-        'type'     => 'anomaly.field_type.select',
-        'required' => true,
-        'config'   => [
+        'env'         => 'TIME_FORMAT',
+        'bind'        => 'streams::datetime.time_format',
+        'type'        => 'anomaly.field_type.select',
+        'placeholder' => false,
+        'required'    => true,
+        'config'      => [
             'options' => [
                 'g:i A' => function () {
-                    return date('g:00 A'); // 4:00 PM
+                    return date('g:i A'); // 4:00 PM
+                },
+                'g:i a' => function () {
+                    return date('g:i a'); // 4:00 pm
                 },
                 'H:i'   => function () {
-                    return date('H:00'); // 16:00
+                    return date('H:i'); // 16:00
                 },
             ],
         ],
@@ -129,7 +135,9 @@ return [
         'type'     => 'anomaly.field_type.select',
         'required' => true,
         'config'   => [
-            'default_value' => env('STANDARD_THEME'),
+            'default_value' => function (Repository $config) {
+                return $config->get('streams::themes.standard');
+            },
             'options'       => function (ThemeCollection $themes) {
                 return $themes->standard()->pluck('title', 'namespace')->all();
             },
@@ -141,7 +149,9 @@ return [
         'type'     => 'anomaly.field_type.select',
         'required' => true,
         'config'   => [
-            'default_value' => env('ADMIN_THEME'),
+            'default_value' => function (Repository $config) {
+                return $config->get('streams::themes.admin');
+            },
             'options'       => function (ThemeCollection $themes) {
                 return $themes->admin()->pluck('title', 'namespace')->all();
             },
@@ -183,7 +193,9 @@ return [
         'type'     => 'anomaly.field_type.checkboxes',
         'required' => true,
         'config'   => [
-            'default_value' => config('streams::locales.enabled'),
+            'default_value' => function () {
+                return [config('streams::locales.default')];
+            },
             'options'       => function (Repository $config) {
                 return array_combine(
                     $keys = array_keys($config->get('streams::locales.supported')),
@@ -238,8 +250,8 @@ return [
         'type'     => 'anomaly.field_type.email',
         'required' => true,
         'config'   => [
-            'default_value' => function () {
-                return env('ADMIN_EMAIL');
+            'default_value' => function (Repository $config) {
+                return 'noreply@' . array_get(parse_url($config->get('app.url')), 'host');
             },
         ],
     ],

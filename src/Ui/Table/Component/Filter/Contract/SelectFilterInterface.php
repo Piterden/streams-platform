@@ -3,9 +3,9 @@
 /**
  * Interface SelectFilterInterface
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 interface SelectFilterInterface extends FilterInterface
 {
@@ -16,7 +16,7 @@ interface SelectFilterInterface extends FilterInterface
      * @param  array $options
      * @return mixed
      */
-    public function setOptions(array $options);
+    public function setOptions($options);
 
     /**
      * Get the options.

@@ -3,9 +3,9 @@
 /**
  * Class ButtonRegistry
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class ButtonRegistry
 {
@@ -33,6 +33,9 @@ class ButtonRegistry
             'text' => 'streams::button.options',
             'type' => 'primary',
             'icon' => 'cog',
+        ],
+        'primary'       => [
+            'type' => 'primary',
         ],
         /*
          * Success Buttons
@@ -174,6 +177,11 @@ class ButtonRegistry
             'type' => 'info',
             'icon' => 'cog',
         ],
+        'preferences'   => [
+            'text' => 'streams::button.preferences',
+            'type' => 'info',
+            'icon' => 'sliders',
+        ],
         'configure'     => [
             'text' => 'streams::button.configure',
             'icon' => 'wrench',
@@ -193,6 +201,11 @@ class ButtonRegistry
             'text' => 'streams::button.edit',
             'icon' => 'pencil',
             'type' => 'warning',
+        ],
+        'change'        => [
+            'text' => 'streams::button.change',
+            'type' => 'warning',
+            'icon' => 'cog',
         ],
         /*
          * Danger Buttons
@@ -221,7 +234,7 @@ class ButtonRegistry
         'prompt'        => [
             'icon'       => 'trash',
             'type'       => 'danger',
-            'button'     => 'delete',
+            'segment'    => 'delete',
             'text'       => 'streams::button.delete',
             'attributes' => [
                 'data-match'   => 'yes',
@@ -265,6 +278,29 @@ class ButtonRegistry
     public function register($button, array $parameters)
     {
         array_set($this->buttons, $button, $parameters);
+
+        return $this;
+    }
+
+    /**
+     * Get the buttons.
+     *
+     * @return array
+     */
+    public function getButtons()
+    {
+        return $this->buttons;
+    }
+
+    /**
+     * Set the buttons.
+     *
+     * @param array $buttons
+     * @return $this
+     */
+    public function setButtons(array $buttons)
+    {
+        $this->buttons = $buttons;
 
         return $this;
     }

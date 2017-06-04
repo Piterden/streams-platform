@@ -6,9 +6,9 @@ use Anomaly\Streams\Platform\Support\Collection;
 /**
  * Class FieldCollection
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class FieldCollection extends Collection
 {
@@ -23,7 +23,7 @@ class FieldCollection extends Collection
     {
         $fields = [];
 
-        $locale = config('app.fallback_locale');
+        $locale = config('streams::locales.default');
 
         /* @var FieldType $item */
         foreach ($this->items as $item) {
@@ -65,8 +65,8 @@ class FieldCollection extends Collection
     /**
      * Get a field.
      *
-     * @param  mixed     $key
-     * @param  null      $default
+     * @param  mixed $key
+     * @param  null $default
      * @return FieldType
      */
     public function get($key, $default = null)
@@ -181,7 +181,7 @@ class FieldCollection extends Collection
     }
 
     /**
-     * Return self hanling fields.
+     * Return self handling fields.
      *
      * @return FieldCollection
      */

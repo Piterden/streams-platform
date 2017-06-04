@@ -1,19 +1,46 @@
 <?php namespace Anomaly\Streams\Platform\Model;
 
-use Anomaly\Streams\Platform\Traits\Hookable;
+use Anomaly\Streams\Platform\Entry\Contract\EntryInterface;
+use Anomaly\Streams\Platform\Entry\EntryPresenter;
+use Anomaly\Streams\Platform\Search\SearchCriteria;
+use Anomaly\Streams\Platform\Support\Collection;
 use Anomaly\Streams\Platform\Support\Decorator;
 use Anomaly\Streams\Platform\Support\Presenter;
-use Anomaly\Streams\Platform\Support\Collection;
-use Anomaly\Streams\Platform\Entry\EntryPresenter;
-use Anomaly\Streams\Platform\Entry\Contract\EntryInterface;
-use Illuminate\Foundation\Bus\DispatchesJobs;
+use Anomaly\Streams\Platform\Traits\Hookable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Pagination\Paginator;
+use Illuminate\Foundation\Bus\DispatchesJobs;
 
+/**
+ * Class EloquentCriteria
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class EloquentCriteria
 {
+
     use Hookable;
     use DispatchesJobs;
+
+    /**
+     * Additional available methods.
+     *
+     * @var array
+     */
+    protected $available = [
+        'whereBetween',
+        'whereNotBetween',
+        'whereIn',
+        'whereNotIn',
+        'whereNull',
+        'whereNotNull',
+        'whereDate',
+        'whereMonth',
+        'whereDay',
+        'whereYear',
+        'whereColumn',
+    ];
 
     /**
      * Safe builder methods.
@@ -54,34 +81,39 @@ class EloquentCriteria
     /**
      * Get the paginated entries.
      *
-     * @param  array     $columns
-     * @return Paginator
+     * @param int    $perPage
+     * @param array  $columns
+     * @param string $pageName
+     * @return array|\ArrayAccess|\IteratorAggregate|Presenter
      */
-    public function paginate($perPage = 15, array $columns = ['*'])
+    public function paginate($perPage = 15, array $columns = ['*'], $pageName = 'page')
     {
-        return (new Decorator())->decorate($this->query->paginate($perPage, $columns));
+        return (new Decorator())->decorate($this->query->paginate($perPage, $columns, $pageName));
+    }
+
+    /**
+     * Return a new search criteria.
+     *
+     * @param  string $term
+     * @return SearchCriteria
+     */
+    public function search($term)
+    {
+        return new SearchCriteria(
+            $this->query->getModel()->search($term),
+            $this->query->getModel()
+        );
     }
 
     /**
      * Get the entries.
      *
-     * @param  array                               $columns
+     * @param  array $columns
      * @return Collection|Presenter|EntryPresenter
      */
     public function get(array $columns = ['*'])
     {
         return (new Decorator())->decorate($this->query->{$this->method}($columns));
-    }
-
-    /**
-     * Get the aggregate sum.
-     *
-     * @param  array $columns
-     * @return int
-     */
-    public function sum(array $columns = ['*'])
-    {
-        return (new Decorator())->decorate($this->query->sum($columns));
     }
 
     /**
@@ -93,6 +125,50 @@ class EloquentCriteria
     public function count(array $columns = ['*'])
     {
         return (new Decorator())->decorate($this->query->count($columns));
+    }
+
+    /**
+     * Get the aggregate sum.
+     *
+     * @param  $column
+     * @return int
+     */
+    public function sum($column)
+    {
+        return (new Decorator())->decorate($this->query->sum($column));
+    }
+
+    /**
+     * Get the aggregate max.
+     *
+     * @param  $column
+     * @return int
+     */
+    public function max($column)
+    {
+        return (new Decorator())->decorate($this->query->max($column));
+    }
+
+    /**
+     * Get the aggregate min.
+     *
+     * @param  $column
+     * @return int
+     */
+    public function min($column)
+    {
+        return (new Decorator())->decorate($this->query->min($column));
+    }
+
+    /**
+     * Get the aggregate avg.
+     *
+     * @param  $column
+     * @return int
+     */
+    public function avg($column)
+    {
+        return (new Decorator())->decorate($this->query->avg($column));
     }
 
     /**
@@ -125,7 +201,7 @@ class EloquentCriteria
     /**
      * Return the first entry.
      *
-     * @param  array                        $columns
+     * @param  array $columns
      * @return EloquentModel|EntryInterface
      */
     public function first(array $columns = ['*'])
@@ -142,6 +218,18 @@ class EloquentCriteria
     protected function methodIsSafe($name)
     {
         return (!in_array($name, $this->disabled));
+    }
+
+    /**
+     * Return whether the method
+     * exists on the query or not.
+     *
+     * @param $name
+     * @return bool
+     */
+    protected function methodExists($name)
+    {
+        return method_exists($this->query->getQuery(), $name) || method_exists($this->query, $name);
     }
 
     /**
@@ -168,19 +256,22 @@ class EloquentCriteria
             return $this->call($name, $arguments);
         }
 
-        if ($this->methodIsSafe($name)) {
+        if ($this->methodExists($name) && $this->methodIsSafe($name)) {
+
             call_user_func_array([$this->query, $name], $arguments);
 
             return $this;
         }
 
         if (starts_with($name, 'findBy') && $column = snake_case(substr($name, 6))) {
+
             call_user_func_array([$this->query, 'where'], array_merge([$column], $arguments));
 
             return $this->first();
         }
 
         if (starts_with($name, 'where') && $column = snake_case(substr($name, 5))) {
+
             call_user_func_array([$this->query, 'where'], array_merge([$column], $arguments));
 
             return $this;

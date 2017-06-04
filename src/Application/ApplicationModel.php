@@ -5,9 +5,9 @@ use Anomaly\Streams\Platform\Model\EloquentModel;
 /**
  * Class ApplicationModel
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class ApplicationModel extends EloquentModel
 {
@@ -43,5 +43,15 @@ class ApplicationModel extends EloquentModel
         'domain',
         'enabled',
         'reference',
+    ];
+
+    /**
+     * The attribute castings.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'enabled'   => 'boolean',
+        'installed' => 'boolean',
     ];
 }

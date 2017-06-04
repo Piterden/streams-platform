@@ -6,9 +6,9 @@ use Anomaly\Streams\Platform\Ui\Icon\IconRegistry;
 /**
  * Class GetIcon
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class GetIcon
 {
@@ -30,9 +30,10 @@ class GetIcon
     /**
      * Create a new GetIcon instance.
      *
-     * @param $type
+     * @param      $type
+     * @param null $class
      */
-    public function __construct($type, $class)
+    public function __construct($type, $class = null)
     {
         $this->type  = $type;
         $this->class = $class;

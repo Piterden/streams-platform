@@ -6,18 +6,20 @@ use Anomaly\Streams\Platform\Http\Middleware\MiddlewareCollection;
 use Anomaly\Streams\Platform\View\Event\RegisteringTwigPlugins;
 use Anomaly\Streams\Platform\View\ViewMobileOverrides;
 use Anomaly\Streams\Platform\View\ViewOverrides;
+use Illuminate\Console\Events\ArtisanStarting;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Console\Events\ArtisanStarting;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Database\Eloquent\Factory;
+use Illuminate\Foundation\AliasLoader;
 use Illuminate\Routing\Router;
 
 /**
  * Class AddonProvider
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class AddonProvider
 {
@@ -49,6 +51,13 @@ class AddonProvider
      * @var Dispatcher
      */
     protected $events;
+
+    /**
+     * The factory manager.
+     *
+     * @var Factory
+     */
+    protected $factory;
 
     /**
      * The scheduler instance.
@@ -88,10 +97,13 @@ class AddonProvider
     /**
      * Create a new AddonProvider instance.
      *
-     * @param Router      $router
-     * @param Dispatcher  $events
-     * @param Schedule    $schedule
-     * @param Application $application
+     * @param Router               $router
+     * @param Dispatcher           $events
+     * @param Schedule             $schedule
+     * @param Application          $application
+     * @param ViewOverrides        $viewOverrides
+     * @param MiddlewareCollection $middlewares
+     * @param ViewMobileOverrides  $viewMobileOverrides
      */
     public function __construct(
         Router $router,
@@ -140,18 +152,23 @@ class AddonProvider
 
         $this->registerRoutes($provider, $addon);
         $this->registerOverrides($provider, $addon);
+        $this->registerApi($provider, $addon);
 
         $this->registerEvents($provider);
         $this->registerPlugins($provider);
         $this->registerCommands($provider);
         $this->registerSchedules($provider);
-        $this->registerProviders($provider);
         $this->registerMiddleware($provider);
         $this->registerRouteMiddleware($provider);
 
+        $this->registerFactories($addon);
+
         if (method_exists($provider, 'register')) {
-            $this->application->call([$provider, 'register']);
+            $this->application->call([$provider, 'register'], ['provider' => $this]);
         }
+
+        // Call other providers last.
+        $this->registerProviders($provider);
     }
 
     /**
@@ -202,14 +219,32 @@ class AddonProvider
     }
 
     /**
+     * Register the addon commands.
+     *
+     * @param Addon $addon
+     */
+    protected function registerFactories(Addon $addon)
+    {
+        /**
+         * @todo Move this back into a
+         *       dependency for 3.4
+         *       causes issues with
+         *       3.2 conversions.
+         */
+        if (is_dir($factories = $addon->getPath('factories'))) {
+            app(Factory::class)->load($factories);
+        }
+    }
+
+    /**
      * Bind class aliases.
      *
      * @param AddonServiceProvider $provider
      */
     protected function bindAliases(AddonServiceProvider $provider)
     {
-        foreach ($provider->getAliases() as $abstract => $alias) {
-            $this->application->alias($abstract, $alias);
+        if ($aliases = $provider->getAliases()) {
+            AliasLoader::getInstance($aliases)->register();
         }
     }
 
@@ -251,8 +286,8 @@ class AddonProvider
         foreach ($listen as $event => $listeners) {
             foreach ($listeners as $key => $listener) {
                 if (is_integer($listener)) {
-                    $listener = $key;
                     $priority = $listener;
+                    $listener = $key;              
                 } else {
                     $priority = 0;
                 }
@@ -294,14 +329,148 @@ class AddonProvider
             }
 
             $verb        = array_pull($route, 'verb', 'any');
+            $middleware  = array_pull($route, 'middleware', []);
             $constraints = array_pull($route, 'constraints', []);
 
             array_set($route, 'streams::addon', $addon->getNamespace());
 
             if (is_string($route['uses']) && !str_contains($route['uses'], '@')) {
-                $this->router->controller($uri, $route['uses']);
+                $this->router->resource($uri, $route['uses']);
             } else {
-                $this->router->{$verb}($uri, $route)->where($constraints);
+
+                $route = $this->router->{$verb}($uri, $route)->where($constraints);
+
+                if ($middleware) {
+                    call_user_func_array([$route, 'middleware'], (array)$middleware);
+                }
+            }
+        }
+    }
+
+    /**
+     * Register the addon routes.
+     *
+     * @param AddonServiceProvider $provider
+     * @param Addon                $addon
+     */
+    protected function registerApi(AddonServiceProvider $provider, Addon $addon)
+    {
+        if ($this->routesAreCached()) {
+            return;
+        }
+
+        if (!$routes = $provider->getApi()) {
+            return;
+        }
+
+        $this->router->group(
+            [
+                'middleware' => 'auth:api',
+            ],
+            function (Router $router) use ($routes, $addon) {
+
+                foreach ($routes as $uri => $route) {
+
+                    /*
+                     * If the route definition is an
+                     * not an array then let's make it one.
+                     * Array type routes give us more control
+                     * and allow us to pass information in the
+                     * request's route action array.
+                     */
+                    if (!is_array($route)) {
+                        $route = [
+                            'uses' => $route,
+                        ];
+                    }
+
+                    $verb        = array_pull($route, 'verb', 'any');
+                    $middleware  = array_pull($route, 'middleware', []);
+                    $constraints = array_pull($route, 'constraints', []);
+
+                    array_set($route, 'streams::addon', $addon->getNamespace());
+
+                    if (is_string($route['uses']) && !str_contains($route['uses'], '@')) {
+                        $router->resource($uri, $route['uses']);
+                    } else {
+
+                        $route = $router->{$verb}($uri, $route)->where($constraints);
+
+                        if ($middleware) {
+                            call_user_func_array([$route, 'middleware'], (array)$middleware);
+                        }
+                    }
+                }
+            }
+        );
+    }
+
+    /**
+     * Register field routes.
+     *
+     * @param Addon $addon
+     * @param       $controller
+     * @param null  $segment
+     */
+    public function registerFieldsRoutes(Addon $addon, $controller, $segment = null)
+    {
+        if ($segment) {
+            $segment = $addon->getSlug();
+        }
+
+        $routes = [
+            'admin/' . $segment . '/fields'             => [
+                'as'   => $addon->getNamespace('fields.index'),
+                'uses' => $controller . '@index',
+            ],
+            'admin/' . $segment . '/fields/choose'      => [
+                'as'   => $addon->getNamespace('fields.choose'),
+                'uses' => $controller . '@choose',
+            ],
+            'admin/' . $segment . '/fields/create'      => [
+                'as'   => $addon->getNamespace('fields.create'),
+                'uses' => $controller . '@create',
+            ],
+            'admin/' . $segment . '/fields/edit/{id}'   => [
+                'as'   => $addon->getNamespace('fields.edit'),
+                'uses' => $controller . '@edit',
+            ],
+            'admin/' . $segment . '/fields/change/{id}' => [
+                'as'   => $addon->getNamespace('fields.change'),
+                'uses' => $controller . '@change',
+            ],
+        ];
+
+        foreach ($routes as $uri => $route) {
+
+            /*
+             * If the route definition is an
+             * not an array then let's make it one.
+             * Array type routes give us more control
+             * and allow us to pass information in the
+             * request's route action array.
+             */
+            if (!is_array($route)) {
+                $route = [
+                    'uses' => $route,
+                ];
+            }
+
+            $verb        = array_pull($route, 'verb', 'any');
+            $middleware  = array_pull($route, 'middleware', []);
+            $constraints = array_pull($route, 'constraints', []);
+
+            array_set($route, 'streams::addon', $addon->getNamespace());
+
+            if (is_string($route['uses']) && !str_contains($route['uses'], '@')) {
+                $this->router->resource($uri, $route['uses']);
+            } else {
+
+                $route = $this->router->{$verb}($uri, $route)->where($constraints);
+
+                if ($middleware) {
+                    call_user_func_array([$route, 'middleware'], (array)$middleware);
+                }
             }
         }
     }
@@ -342,10 +511,16 @@ class AddonProvider
 
         foreach ($schedules as $frequency => $commands) {
             foreach (array_filter($commands) as $command) {
-                if (str_contains($frequency, ' ')) {
+                if (str_is('* * * *', $frequency)) {
                     $this->schedule->command($command)->cron($frequency);
                 } else {
-                    $this->schedule->command($command)->{camel_case($frequency)}();
+
+                    $parts = explode('|', $frequency);
+
+                    $method    = camel_case(array_shift($parts));
+                    $arguments = explode(',', array_shift($parts));
+
+                    call_user_func_array([$this->schedule->command($command), $method], $arguments);
                 }
             }
         }

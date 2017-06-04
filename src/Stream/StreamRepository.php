@@ -9,9 +9,9 @@ use Illuminate\Database\Schema\Builder;
 /**
  * Class StreamRepository
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class StreamRepository extends EloquentRepository implements StreamRepositoryInterface
 {
@@ -45,7 +45,7 @@ class StreamRepository extends EloquentRepository implements StreamRepositoryInt
     /**
      * Create a new Stream.
      *
-     * @param  array           $attributes
+     * @param  array $attributes
      * @return StreamInterface
      */
     public function create(array $attributes = [])
@@ -83,6 +83,17 @@ class StreamRepository extends EloquentRepository implements StreamRepositoryInt
     public function findBySlugAndNamespace($slug, $namespace)
     {
         return $this->model->where('slug', $slug)->where('namespace', $namespace)->first();
+    }
+
+    /**
+     * Find all streams by their searchable flag.
+     *
+     * @param $searchable
+     * @return StreamCollection
+     */
+    public function findAllBySearchable($searchable)
+    {
+        return $this->model->where('searchable', $searchable)->get();
     }
 
     /**
@@ -143,7 +154,7 @@ class StreamRepository extends EloquentRepository implements StreamRepositoryInt
 
         $translations = $this->model->getTranslationModel();
 
-        $translations
+        $translations = $translations
             ->leftJoin(
                 'streams_streams',
                 'streams_streams_translations.stream_id',
@@ -151,6 +162,10 @@ class StreamRepository extends EloquentRepository implements StreamRepositoryInt
                 'streams_streams.id'
             )
             ->whereNull('streams_streams.id')
-            ->delete();
+            ->get();
+
+        foreach ($translations as $translation) {
+            $this->delete($translation);
+        }
     }
 }

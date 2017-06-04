@@ -2,14 +2,14 @@
 
 use Anomaly\Streams\Platform\Support\Hydrator;
 use Anomaly\Streams\Platform\Ui\Table\Component\Row\Contract\RowInterface;
-use Illuminate\Contracts\Container\Container;
+use Illuminate\Container\Container;
 
 /**
  * Class RowFactory
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class RowFactory
 {
@@ -48,7 +48,7 @@ class RowFactory
      */
     public function make(array $parameters)
     {
-        $row = $this->container->make(Row::class, $parameters);
+        $row = $this->container->makeWith(Row::class, $parameters);
 
         $this->hydrator->hydrate($row, $parameters);
 

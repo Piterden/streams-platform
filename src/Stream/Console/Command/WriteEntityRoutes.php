@@ -7,9 +7,9 @@ use Illuminate\Filesystem\Filesystem;
 /**
  * Class WriteEntityRoutes
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class WriteEntityRoutes
 {
@@ -60,8 +60,10 @@ class WriteEntityRoutes
     {
         $suffix = ucfirst(camel_case($this->slug));
 
-        $segment    = $this->slug;
+        $first = count($filesystem->files($this->addon->getPath("migrations"))) == 1;
+
         $addon      = $this->addon->getSlug();
+        $segment    = $first ? '' : '/' . $this->slug;
         $controller = $this->addon->getTransformedClass("Http\\Controller\\Admin\\{$suffix}Controller");
 
         $path = $this->addon->getPath("resources/routes/{$this->slug}.php");

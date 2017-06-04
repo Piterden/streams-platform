@@ -7,8 +7,16 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\DispatchesJobs;
+use Robbo\Presenter\PresentableInterface;
 
-class EloquentModel extends Model implements Arrayable
+/**
+ * Class EloquentModel
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
+class EloquentModel extends Model implements Arrayable, PresentableInterface
 {
 
     use Hookable;
@@ -27,6 +35,13 @@ class EloquentModel extends Model implements Arrayable
      * @var array
      */
     protected $translatedAttributes = [];
+
+    /**
+     * Searchable attributes.
+     *
+     * @var array
+     */
+    protected $searchableAttributes = [];
 
     /**
      * The number of minutes to cache query results.
@@ -64,6 +79,13 @@ class EloquentModel extends Model implements Arrayable
     ];
 
     /**
+     * The cascading delete-able relations.
+     *
+     * @var array
+     */
+    protected $cascades = [];
+
+    /**
      * Runtime cache.
      *
      * @var array
@@ -91,14 +113,26 @@ class EloquentModel extends Model implements Arrayable
     }
 
     /**
-     * Alias for $this->setTtl($ttl)
+     * Cache a value in the
+     * model's cache collection.
      *
+     * @param $key
      * @param $ttl
-     * @return EloquentModel
+     * @param $value
+     * @return mixed
      */
-    public function cache($ttl)
+    public function cache($key, $ttl, $value)
     {
-        return $this->setTtl($ttl);
+        (new CacheCollection())
+            ->make([$key])
+            ->setKey($this->getCacheCollectionKey())
+            ->index();
+
+        return app('cache')->remember(
+            $key,
+            $ttl ?: $this->getTtl(),
+            $value
+        );
     }
 
     /**
@@ -110,6 +144,25 @@ class EloquentModel extends Model implements Arrayable
     public function fireEvent($event)
     {
         return $this->fireModelEvent($event);
+    }
+
+    /**
+     * Return the entry presenter.
+     *
+     * This is against standards but required
+     * by the presentable interface.
+     *
+     * @return EloquentPresenter
+     */
+    public function getPresenter()
+    {
+        $presenter = substr(get_class($this), 0, -5) . 'Presenter';
+
+        if (class_exists($presenter)) {
+            return app()->makeWith($presenter, ['object' => $this]);
+        }
+
+        return new EloquentPresenter($this);
     }
 
     /**
@@ -233,7 +286,7 @@ class EloquentModel extends Model implements Arrayable
      */
     public function isForceDeleting()
     {
-        return isset($this->forceDeleting) && $this->forceDeleting == true;
+        return isset($this->forceDeleting) && $this->forceDeleting === true;
     }
 
     /**
@@ -243,7 +296,9 @@ class EloquentModel extends Model implements Arrayable
      */
     public function flushCache()
     {
-        (new CacheCollection())->setKey($this->getCacheCollectionKey())->flush();
+        (new CacheCollection())->setKey($key = $this->getCacheCollectionKey())->flush();
+
+        EloquentQueryBuilder::dropRuntimeCache($key);
 
         return $this;
     }
@@ -252,10 +307,16 @@ class EloquentModel extends Model implements Arrayable
      * Create a new Eloquent query builder for the model.
      *
      * @param  \Illuminate\Database\Query\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder|static
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function newEloquentBuilder($query)
     {
+        $builder = substr(get_class($this), 0, -5) . 'QueryBuilder';
+
+        if (class_exists($builder)) {
+            return new $builder($query);
+        }
+
         return new EloquentQueryBuilder($query);
     }
 
@@ -290,6 +351,7 @@ class EloquentModel extends Model implements Arrayable
      */
     public function getTranslations()
     {
+        /* @var EloquentModel $translation */
         foreach ($translations = $this->translations()->get() as $translation) {
             $translation->setRelation('parent', $this);
         }
@@ -302,17 +364,38 @@ class EloquentModel extends Model implements Arrayable
      * @param  bool|null $withFallback
      * @return Model|null
      */
-    public function getTranslation($locale = null, $withFallback = false)
+    public function getTranslation($locale = null, $withFallback = true)
     {
-        $locale = $locale ?: $this->getFallbackLocale();
 
-        if ($translation = $this->getTranslationByLocaleKey($locale)) {
+        /**
+         * If we have a desired locale and
+         * it exists then just use that locale.
+         */
+        if ($locale && $translation = $this->getTranslationByLocaleKey($locale)) {
             return $translation;
-        } elseif ($withFallback
+        }
+
+        /**
+         * If we don't have a locale or it doesn't exist
+         * then go ahead and try using a fallback in using
+         * the system's designated DEFAULT (not active) locale.
+         */
+        if ($withFallback
+            && $translation = $this->getTranslationByLocaleKey($this->getDefaultLocale())
+        ) {
+            return $translation;
+        }
+
+        /**
+         * If we still don't have a translation then
+         * try looking up the FALLBACK translation.
+         */
+        if ($withFallback
             && $this->getFallbackLocale()
             && $this->getTranslationByLocaleKey($this->getFallbackLocale())
+            && $translation = $this->getTranslationByLocaleKey($this->getFallbackLocale())
         ) {
-            return $this->getTranslationByLocaleKey($this->getFallbackLocale());
+            return $translation;
         }
 
         return null;
@@ -370,6 +453,26 @@ class EloquentModel extends Model implements Arrayable
         return get_class($this) . 'Translation';
     }
 
+    /**
+     * Return translated attributes.
+     *
+     * @return array
+     */
+    public function getTranslatedAttributes()
+    {
+        return $this->translatedAttributes;
+    }
+
+    /**
+     * Return searchable attributes.
+     *
+     * @return array
+     */
+    public function getSearchableAttributes()
+    {
+        return $this->searchableAttributes;
+    }
+
     public function getRelationKey()
     {
         return $this->translationForeignKey ?: $this->getForeignKey();
@@ -388,11 +491,10 @@ class EloquentModel extends Model implements Arrayable
     public function getAttribute($key)
     {
         if ($this->isTranslatedAttribute($key)) {
-            if ($this->getTranslation() === null) {
+
+            if (($translation = $this->getTranslation()) === null) {
                 return null;
             }
-
-            $translation = $this->getTranslation();
 
             $translation->setRelation('parent', $this);
 
@@ -584,6 +686,11 @@ class EloquentModel extends Model implements Arrayable
         return in_array($key, $this->translatedAttributes);
     }
 
+    public function isSearchableAttribute($key)
+    {
+        return in_array($key, $this->searchableAttributes);
+    }
+
     protected function isKeyALocale($key)
     {
         return config('streams::locales.supported.' . $key) !== null;
@@ -637,10 +744,24 @@ class EloquentModel extends Model implements Arrayable
     public function getUnguardedAttributes()
     {
         foreach ($attributes = $this->getAttributes() as $attribute => $value) {
-            $attributes[$attribute] = $this->{$attribute};
+            $attributes[$attribute] = $value;
         }
 
         return array_diff_key($attributes, array_flip($this->getGuarded()));
+    }
+
+    /**
+     * Get the default locale.
+     *
+     * @return string
+     */
+    protected function getDefaultLocale()
+    {
+        if (isset($this->cache['default_locale'])) {
+            return $this->cache['default_locale'];
+        }
+
+        return $this->cache['default_locale'] = config('streams::locales.default');
     }
 
     /**
@@ -731,6 +852,33 @@ class EloquentModel extends Model implements Arrayable
         return class_exists($criteria) ? $criteria : EloquentCriteria::class;
     }
 
+    /**
+     * Hydrate models. This is taken
+     * from the base builder class.
+     *
+     * Not sure why we have to do this.
+     * Revisit and check it out as needed.
+     *
+     * @TODO Possible bug in Laravel 5.4?
+     *
+     * @param $models
+     * @return Collection
+     */
+    public function hydrate($models)
+    {
+        return $this->newQuery()->hydrate($models);
+    }
+
+    /**
+     * Get the cascading actions.
+     *
+     * @return array
+     */
+    public function getCascades()
+    {
+        return $this->cascades;
+    }
+
     public function __get($key)
     {
         if ($this->hasHook($hook = 'get_' . $key)) {
@@ -768,5 +916,16 @@ class EloquentModel extends Model implements Arrayable
     public function __toString()
     {
         return json_encode($this->toArray());
+    }
+
+    /**
+     * Remove volatile cache from
+     * objects before serialization.
+     *
+     * @return array
+     */
+    public function __sleep()
+    {
+        return array_diff(array_keys(get_object_vars($this)), ['cache']);
     }
 }

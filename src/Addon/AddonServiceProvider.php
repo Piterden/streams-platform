@@ -10,12 +10,13 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 /**
  * Class AddonServiceProvider
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class AddonServiceProvider
 {
+
     use DispatchesJobs;
 
     /**
@@ -66,6 +67,13 @@ class AddonServiceProvider
      * @var array
      */
     protected $routes = [];
+
+    /**
+     * Addon API routes.
+     *
+     * @var array
+     */
+    protected $api = [];
 
     /**
      * Addon middleware.
@@ -246,6 +254,16 @@ class AddonServiceProvider
         }
 
         return array_merge($this->routes, $routes);
+    }
+
+    /**
+     * Get the addon API routes.
+     *
+     * @return array
+     */
+    public function getApi()
+    {
+        return $this->api;
     }
 
     /**

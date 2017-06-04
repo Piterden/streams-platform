@@ -5,6 +5,13 @@ use Anomaly\Streams\Platform\Field\Form\Command\AutoAssignField;
 use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
 use Anomaly\Streams\Platform\Ui\Form\FormBuilder;
 
+/**
+ * Class FieldFormBuilder
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class FieldFormBuilder extends FormBuilder
 {
 
@@ -60,7 +67,7 @@ class FieldFormBuilder extends FormBuilder
             $entry->namespace = $stream ? $stream->getNamespace() : $namespace;
         }
 
-        if (!$entry->type) {
+        if ($fieldType) {
             $entry->type = $fieldType->getNamespace();
         }
     }
@@ -132,10 +139,10 @@ class FieldFormBuilder extends FormBuilder
     /**
      * Set the field type.
      *
-     * @param  FieldType $fieldType
+     * @param FieldType|null $fieldType
      * @return $this
      */
-    public function setFieldType(FieldType $fieldType)
+    public function setFieldType(FieldType $fieldType = null)
     {
         $this->fieldType = $fieldType;
 

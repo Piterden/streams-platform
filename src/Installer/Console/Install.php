@@ -1,18 +1,21 @@
 <?php namespace Anomaly\Streams\Platform\Installer\Console;
 
 use Anomaly\Streams\Platform\Addon\AddonManager;
-use Anomaly\Streams\Platform\Application\Application;
+use Anomaly\Streams\Platform\Application\Command\InitializeApplication;
+use Anomaly\Streams\Platform\Application\Command\LoadEnvironmentOverrides;
 use Anomaly\Streams\Platform\Application\Command\ReloadEnvironmentFile;
 use Anomaly\Streams\Platform\Application\Command\WriteEnvironmentFile;
+use Anomaly\Streams\Platform\Entry\Command\AutoloadEntryModels;
 use Anomaly\Streams\Platform\Installer\Console\Command\ConfigureDatabase;
 use Anomaly\Streams\Platform\Installer\Console\Command\ConfirmLicense;
 use Anomaly\Streams\Platform\Installer\Console\Command\LoadApplicationInstallers;
+use Anomaly\Streams\Platform\Installer\Console\Command\LoadBaseMigrations;
+use Anomaly\Streams\Platform\Installer\Console\Command\LoadBaseSeeders;
 use Anomaly\Streams\Platform\Installer\Console\Command\LoadCoreInstallers;
 use Anomaly\Streams\Platform\Installer\Console\Command\LoadExtensionInstallers;
 use Anomaly\Streams\Platform\Installer\Console\Command\LoadExtensionSeeders;
 use Anomaly\Streams\Platform\Installer\Console\Command\LoadModuleInstallers;
 use Anomaly\Streams\Platform\Installer\Console\Command\LoadModuleSeeders;
-use Anomaly\Streams\Platform\Installer\Console\Command\LocateApplication;
 use Anomaly\Streams\Platform\Installer\Console\Command\RunInstallers;
 use Anomaly\Streams\Platform\Installer\Console\Command\SetAdminData;
 use Anomaly\Streams\Platform\Installer\Console\Command\SetApplicationData;
@@ -20,25 +23,24 @@ use Anomaly\Streams\Platform\Installer\Console\Command\SetDatabaseData;
 use Anomaly\Streams\Platform\Installer\Console\Command\SetDatabasePrefix;
 use Anomaly\Streams\Platform\Installer\Console\Command\SetOtherData;
 use Anomaly\Streams\Platform\Installer\Console\Command\SetStreamsData;
-use Anomaly\Streams\Platform\Installer\Event\StreamsHasInstalled;
 use Anomaly\Streams\Platform\Installer\Installer;
 use Anomaly\Streams\Platform\Installer\InstallerCollection;
 use Anomaly\Streams\Platform\Support\Collection;
 use Illuminate\Console\Command;
-use Illuminate\Contracts\Config\Repository;
-use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Bus\DispatchesJobs;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Class Install
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class Install extends Command
 {
+
     use DispatchesJobs;
 
     /**
@@ -57,25 +59,32 @@ class Install extends Command
 
     /**
      * Execute the console command.
+     *
+     * @param Dispatcher   $events
+     * @param AddonManager $manager
      */
-    public function fire(Dispatcher $events, Application $application, AddonManager $manager)
+    public function fire(Dispatcher $events, AddonManager $manager)
     {
-        $this->dispatch(new ConfirmLicense($this));
-
         $data = new Collection();
 
-        $this->dispatch(new SetStreamsData($data));
-        $this->dispatch(new SetDatabaseData($data, $this));
-        $this->dispatch(new SetApplicationData($data, $this));
-        $this->dispatch(new SetAdminData($data, $this));
-        $this->dispatch(new SetOtherData($data, $this));
+        if (!$this->option('ready')) {
 
-        $this->dispatch(new WriteEnvironmentFile($data->all()));
+            $this->dispatch(new ConfirmLicense($this));
+            $this->dispatch(new SetStreamsData($data));
+            $this->dispatch(new SetDatabaseData($data, $this));
+            $this->dispatch(new SetApplicationData($data, $this));
+            $this->dispatch(new SetAdminData($data, $this));
+            $this->dispatch(new SetOtherData($data, $this));
+
+            $this->dispatch(new WriteEnvironmentFile($data->all()));
+        }
+
         $this->dispatch(new ReloadEnvironmentFile());
+        $this->dispatch(new LoadEnvironmentOverrides());
+        $this->dispatch(new InitializeApplication());
 
         $this->dispatch(new ConfigureDatabase());
         $this->dispatch(new SetDatabasePrefix());
-        $this->dispatch(new LocateApplication());
 
         $installers = new InstallerCollection();
 
@@ -84,39 +93,39 @@ class Install extends Command
         $this->dispatch(new LoadModuleInstallers($installers));
         $this->dispatch(new LoadExtensionInstallers($installers));
 
-        $this->dispatch(new RunInstallers($installers, $this));
-
-        $this->call('env:set', ['line' => 'INSTALLED=true']);
-
-        $this->dispatch(new ReloadEnvironmentFile());
-
         $installers->add(
             new Installer(
-                'streams::installer.running_migrations',
-                function (Kernel $console) {
-                    $console->call('migrate', ['--force' => true]);
+                'streams::installer.reloading_application',
+                function () use ($manager, $events) {
+
+                    $this->call('env:set', ['line' => 'INSTALLED=true']);
+
+                    $this->dispatch(new ReloadEnvironmentFile());
+                    $this->dispatch(new AutoloadEntryModels()); // Don't forget!
+
+                    $manager->register(); // Register all of our addons.
                 }
             )
         );
 
-        $manager->register(); // Register all of our addons.
-
-        $events->fire(new StreamsHasInstalled($installers));
-
-        $this->info('Running post installation tasks.');
+        $this->dispatch(new LoadBaseMigrations($installers));
+        $this->dispatch(new LoadBaseSeeders($installers));
 
         $this->dispatch(new LoadModuleSeeders($installers));
         $this->dispatch(new LoadExtensionSeeders($installers));
 
-        $installers->add(
-            new Installer(
-                'streams::installer.running_seeds',
-                function (Kernel $console) {
-                    $console->call('db:seed', ['--force' => true]);
-                }
-            )
-        );
-
         $this->dispatch(new RunInstallers($installers, $this));
+    }
+
+    /**
+     * Get the console command options.
+     *
+     * @return array
+     */
+    protected function getOptions()
+    {
+        return [
+            ['ready', null, InputOption::VALUE_NONE, 'Indicates that the installer should use an existing .env file.'],
+        ];
     }
 }

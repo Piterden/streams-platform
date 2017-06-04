@@ -20,9 +20,9 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Class Form
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class Form implements PresentableInterface
 {
@@ -716,9 +716,9 @@ class Form implements PresentableInterface
         $presenter = get_class($this) . 'Presenter';
 
         if (class_exists($presenter)) {
-            return app()->make($presenter, ['object' => $this]);
+            return app()->makeWith($presenter, ['object' => $this]);
         }
 
-        return app()->make(FormPresenter::class, ['object' => $this]);
+        return app()->makeWith(FormPresenter::class, ['object' => $this]);
     }
 }

@@ -5,9 +5,9 @@ use Illuminate\Contracts\Events\Dispatcher;
 /**
  * Class Kernel
  *
- * @link          http://pyrocms.com/
- * @author        PyroCMS, Inc. <support@pyrocms.com>
- * @author        Ryan Thompson <ryan@pyrocms.com>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class Kernel extends \Illuminate\Foundation\Console\Kernel
 {
@@ -25,5 +25,13 @@ class Kernel extends \Illuminate\Foundation\Console\Kernel
         }
 
         return $this->artisan;
+    }
+
+    /**
+     * Include base commands.
+     */
+    protected function commands()
+    {
+        require base_path('routes/console.php');
     }
 }

@@ -6,9 +6,9 @@ use Closure;
 /**
  * Interface FilterInterface
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 interface FilterInterface
 {
@@ -52,7 +52,7 @@ interface FilterInterface
     /**
      * Set the exact flag.
      *
-     * @param  bool  $exact
+     * @param  bool $exact
      * @return $this
      */
     public function setExact($exact);
@@ -67,7 +67,7 @@ interface FilterInterface
     /**
      * Set the active flag.
      *
-     * @param  bool  $active
+     * @param  bool $active
      * @return $this
      */
     public function setActive($active);

@@ -1,14 +1,18 @@
 <?php namespace Anomaly\Streams\Platform\Application\Command;
 
+use Illuminate\Foundation\Bus\DispatchesJobs;
+
 /**
  * Class WriteEnvironmentFile
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class WriteEnvironmentFile
 {
+
+    use DispatchesJobs;
 
     /**
      * The environment variables.
@@ -42,6 +46,8 @@ class WriteEnvironmentFile
             }
         }
 
-        file_put_contents(base_path('.env'), $contents);
+        $file = $this->dispatch(new GetEnvironmentFile());
+
+        file_put_contents($file, $contents);
     }
 }

@@ -10,8 +10,16 @@ use Anomaly\Streams\Platform\Ui\Form\FormBuilder;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 
+/**
+ * Class BuildForm
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class BuildForm
 {
+
     use DispatchesJobs;
 
     /**
@@ -43,6 +51,7 @@ class BuildForm
          * Setup some objects and options using
          * provided input or sensible defaults.
          */
+        $this->dispatch(new AddAssets($this->builder));
         $this->dispatch(new SetFormModel($this->builder));
         $this->dispatch(new SetFormStream($this->builder));
         $this->dispatch(new SetRepository($this->builder));

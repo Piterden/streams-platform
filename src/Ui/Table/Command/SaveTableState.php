@@ -7,9 +7,9 @@ use Illuminate\Session\Store;
 /**
  * Class SaveTableState
  *
- * @link          http://pyrocms.com/
- * @author        PyroCMS, Inc. <support@pyrocms.com>
- * @author        Ryan Thompson <ryan@pyrocms.com>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class SaveTableState
 {
@@ -37,6 +37,6 @@ class SaveTableState
      */
     public function handle(Store $session, Request $request)
     {
-        $session->set('table::' . $request->url(), $request->getQueryString());
+        $session->put('table::' . $request->url(), $request->getQueryString());
     }
 }

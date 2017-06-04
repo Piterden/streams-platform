@@ -1,13 +1,14 @@
 <?php namespace Anomaly\Streams\Platform\Collection;
 
+use Anomaly\Streams\Platform\Model\EloquentQueryBuilder;
 use Illuminate\Support\Collection;
 
 /**
  * Class CacheCollection
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class CacheCollection extends Collection
 {
@@ -39,10 +40,6 @@ class CacheCollection extends Collection
     public function flush()
     {
         $this->index();
-
-        foreach ($this->items as $key) {
-            app('cache')->forget($key);
-        }
 
         foreach ($this->items as $key) {
             app('cache')->forget($key);

@@ -1,6 +1,5 @@
 <?php namespace Anomaly\Streams\Platform\Ui\Table\Component\Header\Guesser;
 
-use Anomaly\Streams\Platform\Addon\Module\Module;
 use Anomaly\Streams\Platform\Addon\Module\ModuleCollection;
 use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
 use Anomaly\Streams\Platform\Support\Str;
@@ -11,9 +10,9 @@ use Illuminate\Translation\Translator;
 /**
  * Class HeadingsGuesser
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class HeadingsGuesser
 {
@@ -170,7 +169,7 @@ class HeadingsGuesser
              * then humanize the heading value.
              */
             if (!isset($column['heading']) && $this->config->get('streams::system.lazy_translations')) {
-                $column['heading'] = $this->string->humanize($column['field']);
+                $column['heading'] = ucwords($this->string->humanize($column['field']));
             }
 
             /*
@@ -184,7 +183,7 @@ class HeadingsGuesser
                 !$this->translator->has($column['heading']) &&
                 $this->config->get('streams::system.lazy_translations')
             ) {
-                $column['heading'] = $this->string->humanize($column['field']);
+                $column['heading'] = ucwords($this->string->humanize($column['field']));
             }
 
             /*

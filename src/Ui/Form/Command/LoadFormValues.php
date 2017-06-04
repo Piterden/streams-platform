@@ -6,9 +6,9 @@ use Anomaly\Streams\Platform\Ui\Form\FormBuilder;
 /**
  * Class LoadFormValues
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class LoadFormValues
 {
@@ -35,11 +35,13 @@ class LoadFormValues
      */
     public function handle()
     {
-        $form = $this->builder->getForm();
+        if ($this->builder->hasFormErrors()) {
+            return;
+        }
 
         /* @var FieldType $field */
-        foreach ($form->getEnabledFields() as $field) {
-            $form->setValue($field->getInputName(), $field->getInputValue());
+        foreach ($this->builder->getEnabledFormFields() as $field) {
+            $this->builder->setFormValue($field->getInputName(), $field->getInputValue());
         }
     }
 }

@@ -5,10 +5,10 @@ use Anomaly\FilesModule\File\FilePresenter;
 use Anomaly\Streams\Platform\Addon\FieldType\FieldType;
 use Anomaly\Streams\Platform\Application\Application;
 use Anomaly\Streams\Platform\Routing\UrlGenerator;
-use Closure;
 use Collective\Html\HtmlBuilder;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Http\Request;
 use Intervention\Image\Constraint;
 use Intervention\Image\ImageManager;
 use League\Flysystem\File;
@@ -19,9 +19,9 @@ use Robbo\Presenter\Presenter;
 /**
  * Class Image
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class Image
 {
@@ -60,6 +60,20 @@ class Image
      * @var null|string
      */
     protected $filename = null;
+
+    /**
+     * The original filename.
+     *
+     * @var null|string
+     */
+    protected $original = null;
+
+    /**
+     * The version flag.
+     *
+     * @var null|boolean
+     */
+    protected $version = null;
 
     /**
      * The default output method.
@@ -105,6 +119,7 @@ class Image
         'blur',
         'brightness',
         'colorize',
+        'resizeCanvas',
         'contrast',
         'crop',
         'encode',
@@ -114,6 +129,7 @@ class Image
         'greyscale',
         'heighten',
         'insert',
+        'interlace',
         'invert',
         'limitColors',
         'pixelate',
@@ -196,6 +212,13 @@ class Image
     protected $config;
 
     /**
+     * The request object.
+     *
+     * @var Request
+     */
+    protected $request;
+
+    /**
      * The image manager.
      *
      * @var ImageManager
@@ -218,6 +241,7 @@ class Image
      * @param Mobile_Detect $agent
      * @param Repository    $config
      * @param ImageManager  $manager
+     * @param Request       $request
      * @param Application   $application
      * @param ImagePaths    $paths
      * @param ImageMacros   $macros
@@ -229,6 +253,7 @@ class Image
         Mobile_Detect $agent,
         Repository $config,
         ImageManager $manager,
+        Request $request,
         Application $application,
         ImagePaths $paths,
         ImageMacros $macros
@@ -241,6 +266,7 @@ class Image
         $this->config      = $config;
         $this->macros      = $macros;
         $this->manager     = $manager;
+        $this->request     = $request;
         $this->application = $application;
     }
 
@@ -284,7 +310,19 @@ class Image
     {
         $path = $this->getCachePath();
 
-        return $path;
+        return $this->request->getBasePath() . $path;
+    }
+
+    /**
+     * Return the asset path to an image.
+     *
+     * @return string
+     */
+    public function asset()
+    {
+        $path = $this->getCachePath();
+
+        return $this->url->asset($path);
     }
 
     /**
@@ -302,44 +340,54 @@ class Image
     /**
      * Return the URL to an image.
      *
-     * @param  array  $parameters
-     * @param  null   $secure
+     * @param  array $parameters
+     * @param  null  $secure
      * @return string
      */
     public function url(array $parameters = [], $secure = null)
     {
-        return $this->url->asset($this->path(), $parameters, $secure);
+        return $this->url->asset($this->getCachePath(), $parameters, $secure);
     }
 
     /**
      * Return the image tag to an image.
      *
-     * @param  null   $alt
-     * @param  array  $attributes
+     * @param  null  $alt
+     * @param  array $attributes
      * @return string
      */
     public function image($alt = null, array $attributes = [])
     {
-        if (!$alt) {
-            $alt = array_get($this->getAttributes(), 'alt');
-        }
-
         $attributes = array_merge($this->getAttributes(), $attributes);
+
+        $attributes['src'] = $this->asset();
 
         if ($srcset = $this->srcset()) {
             $attributes['srcset'] = $srcset;
         }
 
-        $attributes['alt'] = $alt;
+        if (!$alt && $this->config->get('streams::images.auto_alt', true)) {
 
-        return '<img src="' . $this->path() . '"' . $this->html->attributes($attributes) . '>';
+            $attributes['alt'] = array_get(
+                $this->getAttributes(),
+                'alt',
+                ucwords(
+                    str_humanize(
+                        trim(basename($this->getOriginal(), $this->getExtension()), '.'),
+                        '^a-zA-Z0-9'
+                    )
+                )
+            );
+        }
+
+        return '<img ' . $this->html->attributes($attributes) . '>';
     }
 
     /**
      * Return the image tag to an image.
      *
-     * @param  null   $alt
-     * @param  array  $attributes
+     * @param  null  $alt
+     * @param  array $attributes
      * @return string
      */
     public function img($alt = null, array $attributes = [])
@@ -381,7 +429,7 @@ class Image
      */
     public function source()
     {
-        $this->addAttribute('srcset', $this->srcset() ?: $this->path() . ' 2x, ' . $this->path() . ' 1x');
+        $this->addAttribute('srcset', $this->srcset() ?: $this->asset() . ' 2x, ' . $this->asset() . ' 1x');
 
         $attributes = $this->html->attributes($this->getAttributes());
 
@@ -395,8 +443,8 @@ class Image
     /**
      * Return the image response.
      *
-     * @param  null   $format
-     * @param  int    $quality
+     * @param  null $format
+     * @param  int  $quality
      * @return String
      */
     public function encode($format = null, $quality = null)
@@ -436,6 +484,17 @@ class Image
     }
 
     /**
+     * Set the version flag.
+     *
+     * @param bool $version
+     * @return $this
+     */
+    public function version($version = true)
+    {
+        return $this->setVersion($version);
+    }
+
+    /**
      * Set the quality.
      *
      * @param $quality
@@ -449,7 +508,7 @@ class Image
     /**
      * Set the width attribute.
      *
-     * @param  null  $width
+     * @param  null $width
      * @return Image
      */
     public function width($width = null)
@@ -460,7 +519,7 @@ class Image
     /**
      * Set the height attribute.
      *
-     * @param  null  $height
+     * @param  null $height
      * @return Image
      */
     public function height($height = null)
@@ -492,6 +551,12 @@ class Image
             return $this->getImage();
         }
 
+        if ($this->agent->isTablet()) {
+            $this->macro('tablet_optimized');
+        } elseif ($this->agent->isMobile()) {
+            $this->macro('mobile_optimized');
+        }
+
         $path = $this->paths->outputPath($this);
 
         try {
@@ -502,7 +567,11 @@ class Image
             return $this->config->get('app.debug', false) ? $e->getMessage() : null;
         }
 
-        return $this->paths->prefix() . $path;
+        if ($this->config->get('streams::images.version') || $this->getVersion() == true) {
+            $path .= '?v=' . filemtime(public_path(trim($path, '/\\')));
+        }
+
+        return $path;
     }
 
     /**
@@ -548,11 +617,12 @@ class Image
      */
     protected function publish($path)
     {
-        $path = ltrim($path, '/');
+        $path = $this->directory . DIRECTORY_SEPARATOR . ltrim($path, '/');
 
         $this->files->makeDirectory((new \SplFileInfo($path))->getPath(), 0777, true, true);
 
-        if ($this->files->extension($path) == 'svg') {
+        if (!$this->supportsType($this->getExtension())) {
+
             $this->files->put($path, $this->dumpImage());
 
             return;
@@ -566,8 +636,13 @@ class Image
             $this->addAlteration('orientate');
         }
 
-        if (!$this->getAlterations() && $content = $this->dumpImage()) {
-            $this->files->put($this->directory . $path, $content);
+        if (in_array($this->getExtension(), ['jpeg', 'jpg']) && $this->config->get('streams::images.interlace')) {
+            $this->addAlteration('interlace');
+        }
+
+        if (!$this->getAlterations() && !$this->getQuality() && $content = $this->dumpImage()) {
+
+            $this->files->put($path, $content);
 
             return;
         }
@@ -577,11 +652,13 @@ class Image
         }
 
         foreach ($this->getAlterations() as $method => $arguments) {
+
             if ($method == 'resize') {
                 $this->guessResizeArguments($arguments);
             }
 
             if (in_array($method, $this->getAllowedMethods())) {
+
                 if (is_array($arguments)) {
                     call_user_func_array([$image, $method], $arguments);
                 } else {
@@ -590,7 +667,7 @@ class Image
             }
         }
 
-        $image->save($this->directory . $path, $this->getQuality());
+        $image->save($path, $this->getQuality());
     }
 
     /**
@@ -618,7 +695,7 @@ class Image
 
         /* @var Image $image */
         foreach ($this->getSrcsets() as $descriptor => $image) {
-            $sources[] = $image->path() . ' ' . $descriptor;
+            $sources[] = $image->asset() . ' ' . $descriptor;
         }
 
         return implode(', ', $sources);
@@ -721,6 +798,17 @@ class Image
     }
 
     /**
+     * Return if an extension is supported.
+     *
+     * @param $extension
+     * @return bool
+     */
+    protected function supportsType($extension)
+    {
+        return !in_array($extension, ['svg', 'webp']);
+    }
+
+    /**
      * Set the image.
      *
      * @param  $image
@@ -740,6 +828,7 @@ class Image
         if (is_string($image) && str_contains($image, '::')) {
             $image = $this->paths->realPath($image);
 
+            $this->setOriginal(basename($image));
             $this->setExtension(pathinfo($image, PATHINFO_EXTENSION));
 
             $size = getimagesize($image);
@@ -749,12 +838,14 @@ class Image
         }
 
         if (is_string($image) && str_is('*://*', $image) && !starts_with($image, ['http', 'https'])) {
+            $this->setOriginal(basename($image));
             $this->setExtension(pathinfo($image, PATHINFO_EXTENSION));
         }
 
         if ($image instanceof FileInterface) {
 
             /* @var FileInterface $image */
+            $this->setOriginal($image->getName());
             $this->setExtension($image->getExtension());
 
             $this->setWidth($image->getWidth());
@@ -766,6 +857,7 @@ class Image
             /* @var FilePresenter|FileInterface $image */
             $image = $image->getObject();
 
+            $this->setOriginal($image->getName());
             $this->setExtension($image->getExtension());
 
             $this->setWidth($image->getWidth());
@@ -818,16 +910,20 @@ class Image
             return app('League\Flysystem\MountManager')->read($this->image->location());
         }
 
-        if (is_string($this->image) && str_is('*://*', $this->image)) {
+        if (is_string($this->image) && str_is('*://*', $this->image) && !starts_with($this->image, ['http', '//'])) {
             return app('League\Flysystem\MountManager')->read($this->image);
         }
 
-        if ($this->image instanceof File) {
-            return $this->image->read();
+        if (is_string($this->image) && (file_exists($this->image) || starts_with($this->image, ['http', '//']))) {
+            return file_get_contents($this->image);
         }
 
         if (is_string($this->image) && file_exists($this->image)) {
             return file_get_contents($this->image);
+        }
+
+        if ($this->image instanceof File) {
+            return $this->image->read();
         }
 
         if ($this->image instanceof Image) {
@@ -869,11 +965,53 @@ class Image
      */
     public function setFilename($filename = null)
     {
-        if (!$filename) {
-            $filename = $this->getImageFilename();
-        }
-
         $this->filename = $filename;
+
+        return $this;
+    }
+
+    /**
+     * Get the original name.
+     *
+     * @return null|string
+     */
+    public function getOriginal()
+    {
+        return $this->original;
+    }
+
+    /**
+     * Set the original name.
+     *
+     * @param $original
+     * @return $this
+     */
+    public function setOriginal($original = null)
+    {
+        $this->original = $original;
+
+        return $this;
+    }
+
+    /**
+     * Get the file name.
+     *
+     * @return null|string
+     */
+    public function getVersion()
+    {
+        return $this->version;
+    }
+
+    /**
+     * Set the file name.
+     *
+     * @param $version
+     * @return $this
+     */
+    public function setVersion($version = true)
+    {
+        $this->version = $version;
 
         return $this;
     }
@@ -1007,7 +1145,7 @@ class Image
     public function getQuality($default = null)
     {
         if (!$default) {
-            $this->config->get('streams::images.quality', 80);
+            $default = $this->config->get('streams::images.quality', 80);
         }
 
         return $this->quality ?: $default;
@@ -1073,6 +1211,7 @@ class Image
         return $this;
     }
 
+
     /**
      * Get the width.
      *
@@ -1136,8 +1275,22 @@ class Image
         if (array_pop($arguments) !== false && (is_null($arguments[0]) || is_null($arguments[1]))) {
             $arguments[] = function (Constraint $constraint) {
                 $constraint->aspectRatio();
+                $constraint->upsize();
             };
         }
+    }
+
+    /**
+     * Set the public base directory.
+     *
+     * @param  $directory
+     * @return $this
+     */
+    public function setDirectory($directory)
+    {
+        $this->directory = $directory;
+
+        return $this;
     }
 
     /**

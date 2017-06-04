@@ -6,9 +6,9 @@ use Anomaly\Streams\Platform\Ui\Table\Component\Column\Contract\ColumnInterface;
 /**
  * Class ColumnFactory
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class ColumnFactory
 {
@@ -45,7 +45,7 @@ class ColumnFactory
      */
     public function make(array $parameters)
     {
-        $column = app()->make(array_get($parameters, 'column', $this->column), $parameters);
+        $column = app()->makeWith(array_get($parameters, 'column', $this->column), $parameters);
 
         $this->hydrator->hydrate($column, $parameters);
 

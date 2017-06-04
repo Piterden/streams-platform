@@ -6,9 +6,9 @@ use Illuminate\Database\Schema\Blueprint;
 /**
  * Class CreateApplicationsTable
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class CreateApplicationsTable extends Migration
 {
@@ -31,8 +31,8 @@ class CreateApplicationsTable extends Migration
                     $table->string('domain');
                     $table->boolean('enabled');
 
-                    $table->unique('reference', 'unique_references');
-                    $table->unique('domain', 'unique_domains');
+                    $table->unique('reference', 'unique_application_references');
+                    $table->unique('domain', 'unique_application_domains');
                 }
             );
         }

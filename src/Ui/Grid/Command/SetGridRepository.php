@@ -5,9 +5,9 @@ use Anomaly\Streams\Platform\Ui\Grid\GridBuilder;
 /**
  * Class SetGridRepository
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class SetGridRepository
 {
@@ -50,6 +50,6 @@ class SetGridRepository
         /*
          * Set the repository on the form!
          */
-        $grid->setRepository(app()->make($repository, compact('model', 'grid')));
+        $grid->setRepository(app()->makeWith($repository, compact('model', 'grid')));
     }
 }

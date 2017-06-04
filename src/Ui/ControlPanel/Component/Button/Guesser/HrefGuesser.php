@@ -8,9 +8,9 @@ use Illuminate\Http\Request;
 /**
  * Class HrefGuesser
  *
- * @link          http://anomaly.is/streams-Platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class HrefGuesser
 {
@@ -91,8 +91,10 @@ class HrefGuesser
                     break;
             }
 
-            if (!isset($button['attributes']['href']) && isset($button['button'])) {
-                $button['attributes']['href'] = $active->getHref($button['button']);
+            $type = array_get($button, 'segment', array_get($button, 'button'));
+
+            if (!isset($button['attributes']['href']) && $type) {
+                $button['attributes']['href'] = $active->getHref($type);
             }
         }
 

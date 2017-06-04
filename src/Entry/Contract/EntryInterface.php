@@ -15,9 +15,9 @@ use Carbon\Carbon;
 /**
  * Interface EntryInterface
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 interface EntryInterface
 {
@@ -135,6 +135,13 @@ interface EntryInterface
     public function getTranslationsTableName();
 
     /**
+     * Get the translated attributes.
+     *
+     * @return array
+     */
+    public function getTranslatedAttributes();
+
+    /**
      * Get a field by it's slug.
      *
      * @param  $slug
@@ -229,7 +236,7 @@ interface EntryInterface
     /**
      * Get the field slugs for assigned fields.
      *
-     * @param  null  $prefix
+     * @param  null $prefix
      * @return array
      */
     public function getAssignmentFieldSlugs($prefix = null);
@@ -264,6 +271,20 @@ interface EntryInterface
      * @return AssignmentCollection
      */
     public function getRelationshipAssignments();
+
+    /**
+     * Return required assignments.
+     *
+     * @return AssignmentCollection
+     */
+    public function getRequiredAssignments();
+
+    /**
+     * Return searchable assignments.
+     *
+     * @return AssignmentCollection
+     */
+    public function getSearchableAssignments();
 
     /**
      * Get a specified relationship.
@@ -434,11 +455,36 @@ interface EntryInterface
     public function getAttributes();
 
     /**
+     * Cache a value in the
+     * model's cache collection.
+     *
+     * @param $key
+     * @param $ttl
+     * @param $value
+     * @return mixed
+     */
+    public function cache($key, $ttl, $value);
+
+    /**
      * Flush the entry model's cache.
      *
      * @return EntryInterface
      */
     public function flushCache();
+
+    /**
+     * Return the entry as an array.
+     *
+     * @return array
+     */
+    public function toArray();
+
+    /**
+     * Return the searchable array.
+     *
+     * @return array
+     */
+    public function toSearchableArray();
 
     /**
      * Return the routable array.
@@ -454,6 +500,13 @@ interface EntryInterface
      * @param array $payload
      */
     public function fireFieldTypeEvents($trigger, $payload = []);
+
+    /**
+     * Get the cascading actions.
+     *
+     * @return array
+     */
+    public function getCascades();
 
     /**
      * Call a hook.

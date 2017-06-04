@@ -8,9 +8,9 @@ use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
 /**
  * Interface AssignmentInterface
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 interface AssignmentInterface
 {
@@ -100,6 +100,13 @@ interface AssignmentInterface
     public function isRequired();
 
     /**
+     * Get the searchable flag.
+     *
+     * @return bool
+     */
+    public function isSearchable();
+
+    /**
      * Get the translatable flag.
      *
      * @return bool
@@ -116,7 +123,7 @@ interface AssignmentInterface
     /**
      * Get the assignment's field's type.
      *
-     * @param  bool      $fresh
+     * @param  bool $fresh
      * @return FieldType
      */
     public function getFieldType($fresh = false);
@@ -193,4 +200,5 @@ interface AssignmentInterface
      * @return AssignmentInterface
      */
     public function compileStream();
+
 }

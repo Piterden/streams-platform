@@ -2,6 +2,13 @@
 
 use Illuminate\Contracts\Container\Container;
 
+/**
+ * Class Evaluator
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class Evaluator
 {
 
@@ -54,7 +61,7 @@ class Evaluator
          * format then traverse the target using the arguments.
          */
         if (is_string($target) && !isset($arguments[$target]) && $this->isTraversable($target)) {
-            $target = data_get($arguments, $target, $target);
+            $target = data($arguments, $target, $target);
         }
 
         return $target;

@@ -5,15 +5,14 @@ use Anomaly\Streams\Platform\Support\Presenter;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\RouteCollection;
-use Illuminate\Support\Str;
 use StringTemplate\Engine;
 
 /**
  * Class UrlGenerator
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class UrlGenerator extends \Illuminate\Routing\UrlGenerator
 {
@@ -38,7 +37,7 @@ class UrlGenerator extends \Illuminate\Routing\UrlGenerator
         $this->parser = app(Engine::class);
 
         if (defined('LOCALE')) {
-            $this->forceRootUrl($this->getRootUrl($this->getScheme(null)) . '/' . LOCALE);
+            $this->forceRootUrl($this->getRootUrl($this->formatScheme(null)) . '/' . LOCALE);
         }
     }
 
@@ -77,7 +76,7 @@ class UrlGenerator extends \Illuminate\Routing\UrlGenerator
             return $asset;
         }
 
-        $scheme = $this->getScheme($secure);
+        $scheme = $this->formatScheme($secure);
 
         $extra = $this->formatParameters($extra);
 
@@ -86,7 +85,7 @@ class UrlGenerator extends \Illuminate\Routing\UrlGenerator
         // Once we have the scheme we will compile the "tail" by collapsing the values
         // into a single string delimited by slashes. This just makes it convenient
         // for passing the array of parameters to this URL as a list of segments.
-        $root = $this->getRootUrl($scheme);
+        $root = $this->formatRoot($scheme);
 
         if (defined('LOCALE') && ends_with($root, $search = '/' . LOCALE)) {
             $root = substr_replace($root, '', strrpos($root, $search), strlen($search));
@@ -99,7 +98,7 @@ class UrlGenerator extends \Illuminate\Routing\UrlGenerator
             $query = '';
         }
 
-        return $this->trimUrl($root, $asset, $tail) . $query;
+        return $this->removeIndex($root) . $asset . $tail . $query;
     }
 
     /**
@@ -128,9 +127,11 @@ class UrlGenerator extends \Illuminate\Routing\UrlGenerator
             $entry = $entry->toArray();
         }
 
-        return '/' . $this->addQueryString(
-            $this->parser->render(str_replace('?}', '}', $route->uri()), $entry),
-            $parameters
+        return $this->to(
+            $this->addQueryString(
+                $this->parser->render(str_replace('?}', '}', $route->uri()), $entry),
+                $parameters
+            )
         );
     }
 
@@ -146,6 +147,10 @@ class UrlGenerator extends \Illuminate\Routing\UrlGenerator
      */
     public function route($name, $parameters = [], $absolute = true)
     {
+        if (!$route = $this->routes->getByName($name)) {
+            return null;
+        }
+
         $route = parent::route($name, $parameters, $absolute);
 
         if (!array_filter($parameters)) {
@@ -153,5 +158,16 @@ class UrlGenerator extends \Illuminate\Routing\UrlGenerator
         }
 
         return $route;
+    }
+
+    /**
+     * Return if the route exists.
+     *
+     * @param $name
+     * @return bool
+     */
+    public function hasRoute($name)
+    {
+        return (bool)$this->routes->getByName($name);
     }
 }

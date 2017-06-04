@@ -5,9 +5,9 @@ use Composer\Autoload\ClassLoader;
 /**
  * Class AddonLoader
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class AddonLoader
 {
@@ -43,6 +43,7 @@ class AddonLoader
     public function load($path)
     {
         if (file_exists($autoload = $path . '/vendor/autoload.php')) {
+
             include $autoload;
 
             return;
@@ -52,7 +53,9 @@ class AddonLoader
             return;
         }
 
-        $composer = json_decode(file_get_contents($path . '/composer.json'), true);
+        if (!$composer = json_decode(file_get_contents($path . '/composer.json'), true)) {
+            throw new \Exception("A JSON syntax error was encountered in {$path}/composer.json");
+        }
 
         if (!array_key_exists('autoload', $composer)) {
             return;
@@ -68,6 +71,10 @@ class AddonLoader
 
         foreach (array_get($composer['autoload'], 'files', []) as $file) {
             include($path . '/' . $file);
+        }
+
+        if ($classmap = array_get($composer['autoload'], 'classmap')) {
+            $this->loader->addClassMap($classmap);
         }
     }
 

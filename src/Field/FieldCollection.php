@@ -7,9 +7,9 @@ use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
 /**
  * Class FieldCollection
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class FieldCollection extends EloquentCollection
 {
@@ -34,7 +34,7 @@ class FieldCollection extends EloquentCollection
     /**
      * Return only unassigned fields.
      *
-     * @return static|FieldCollection
+     * @return FieldCollection
      */
     public function unassigned()
     {
@@ -55,7 +55,7 @@ class FieldCollection extends EloquentCollection
      * to the provided stream.
      *
      * @param  StreamInterface $stream
-     * @return static
+     * @return FieldCollection
      */
     public function assignedTo(StreamInterface $stream)
     {
@@ -76,7 +76,7 @@ class FieldCollection extends EloquentCollection
      * to the provided stream.
      *
      * @param  StreamInterface $stream
-     * @return static
+     * @return FieldCollection
      */
     public function notAssignedTo(StreamInterface $stream)
     {

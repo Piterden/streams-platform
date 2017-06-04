@@ -1,15 +1,16 @@
 <?php namespace Anomaly\Streams\Platform\Ui\Form\Command;
 
 use Anomaly\Streams\Platform\Message\MessageBag;
+use Anomaly\Streams\Platform\Model\EloquentModel;
 use Anomaly\Streams\Platform\Ui\Form\FormBuilder;
 use Illuminate\Translation\Translator;
 
 /**
  * Class SetSuccessMessage
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class SetSuccessMessage
 {
@@ -55,6 +56,10 @@ class SetSuccessMessage
 
         $entry  = $this->builder->getFormEntry();
         $stream = $this->builder->getFormStream();
+
+        if (!$entry instanceof EloquentModel) {
+            return;
+        }
 
         $parameters = [
             'title' => is_object($entry) ? $entry->getTitle() : null,

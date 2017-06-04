@@ -6,9 +6,9 @@ use Anomaly\Streams\Platform\Ui\ControlPanel\ControlPanelBuilder;
 /**
  * Class SectionNormalizer
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class SectionNormalizer
 {
@@ -38,6 +38,20 @@ class SectionNormalizer
     public function normalize(ControlPanelBuilder $builder)
     {
         $sections = $builder->getSections();
+
+        /*
+         * Move child sections into main array.
+         */
+        foreach ($sections as $slug => &$section) {
+            if (isset($section['sections'])) {
+                foreach ($section['sections'] as $key => &$child) {
+                    $child['parent'] = array_get($section, 'slug', $slug);
+                    $child['slug']   = array_get($child, 'slug', $key);
+
+                    $sections[$key] = $child;
+                }
+            }
+        }
 
         /*
          * Loop over each section and make sense of the input
@@ -111,18 +125,6 @@ class SectionNormalizer
                 !starts_with($section['permalink'], 'http')
             ) {
                 $section['permalink'] = url($section['permalink']);
-            }
-
-            /*
-             * Move child sections into main array.
-             */
-            if (isset($section['sections'])) {
-                foreach ($section['sections'] as $key => &$child) {
-                    $child['parent'] = array_get($section, 'slug');
-                    $child['slug']   = array_get($child, 'slug', $key);
-
-                    $sections[$key] = $child;
-                }
             }
         }
 

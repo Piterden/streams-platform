@@ -1,12 +1,20 @@
 <?php namespace Anomaly\Streams\Platform\Addon\Console\Command;
 
-use Anomaly\Streams\Platform\Application\Application;
 use Anomaly\Streams\Platform\Addon\Addon;
-use Illuminate\Filesystem\Filesystem;
+use Anomaly\Streams\Platform\Application\Application;
 use Illuminate\Console\Command;
+use Illuminate\Filesystem\Filesystem;
 
+/**
+ * Class PublishTranslations
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class PublishTranslations
 {
+
     /**
      * The addon instance.
      *
@@ -44,13 +52,16 @@ class PublishTranslations
     {
         $destination = $application->getResourcesPath(
             'addons/' .
-                $this->addon->getVendor() . '/' .
-                $this->addon->getSlug() . '-' .
-                $this->addon->getType() . '/lang'
-            );
-        
+            $this->addon->getVendor() . '/' .
+            $this->addon->getSlug() . '-' .
+            $this->addon->getType() . '/lang'
+        );
+
         if (is_dir($destination) && !$this->command->option('force')) {
-            return $this->command->error("$destination already exists.");
+
+            $this->command->error("$destination already exists.");
+
+            return;
         }
 
         $filesystem->copyDirectory($this->addon->getPath('resources/lang'), $destination);

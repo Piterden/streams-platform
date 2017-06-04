@@ -7,9 +7,9 @@ use Illuminate\Contracts\Container\Container;
 /**
  * Class AddImageNamespaces
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class AddImageNamespaces
 {
@@ -19,6 +19,8 @@ class AddImageNamespaces
      */
     public function handle(Image $image, Container $container, Application $application)
     {
+        $image->setDirectory(public_path());
+
         $image->addPath('public', base_path('public'));
         $image->addPath('node', base_path('node_modules'));
         $image->addPath('asset', $application->getAssetsPath());

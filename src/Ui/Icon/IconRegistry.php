@@ -3,9 +3,9 @@
 /**
  * Class IconRegistry
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class IconRegistry
 {
@@ -24,6 +24,9 @@ class IconRegistry
         'arrows-v'             => 'fa fa-arrows-v',
         'ban'                  => 'fa fa-ban',
         'bars'                 => 'fa fa-bars',
+        'bookmark'             => 'fa fa-bookmark',
+        'bookmark-alt'         => 'fa fa-bookmark-o',
+        'book-open'            => 'glyphicons glyphicons-book-open',
         'brush'                => 'glyphicons glyphicons-brush',
         'calendar'             => 'glyphicons glyphicons-calendar',
         'car'                  => 'glyphicons glyphicons-car',
@@ -175,6 +178,29 @@ class IconRegistry
     public function register($icon, array $parameters)
     {
         array_set($this->icons, $icon, $parameters);
+
+        return $this;
+    }
+
+    /**
+     * Get the icons.
+     *
+     * @return array
+     */
+    public function getIcons()
+    {
+        return $this->icons;
+    }
+
+    /**
+     * Set the icons.
+     *
+     * @param array $icons
+     * @return $this
+     */
+    public function setIcons(array $icons)
+    {
+        $this->icons = $icons;
 
         return $this;
     }

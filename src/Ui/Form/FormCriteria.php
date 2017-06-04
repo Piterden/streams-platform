@@ -1,5 +1,6 @@
 <?php namespace Anomaly\Streams\Platform\Ui\Form;
 
+use Anomaly\Streams\Platform\Routing\UrlGenerator;
 use Anomaly\Streams\Platform\Support\Decorator;
 use Anomaly\Streams\Platform\Support\Hydrator;
 use Anomaly\Streams\Platform\Traits\FiresCallbacks;
@@ -10,14 +11,21 @@ use Illuminate\Http\Request;
 /**
  * Class FormCriteria
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class FormCriteria
 {
 
     use FiresCallbacks;
+
+    /**
+     * The URL generator.
+     *
+     * @var UrlGenerator
+     */
+    protected $url;
 
     /**
      * The cache repository.
@@ -64,14 +72,16 @@ class FormCriteria
     /**
      * Create a new FormCriteria instance.
      *
-     * @param Repository  $cache
-     * @param Request     $request
-     * @param Hydrator    $hydrator
-     * @param Container   $container
-     * @param FormBuilder $builder
-     * @param array       $parameters
+     * @param UrlGenerator $url
+     * @param Repository   $cache
+     * @param Request      $request
+     * @param Hydrator     $hydrator
+     * @param Container    $container
+     * @param FormBuilder  $builder
+     * @param array        $parameters
      */
     public function __construct(
+        UrlGenerator $url,
         Repository $cache,
         Request $request,
         Hydrator $hydrator,
@@ -79,6 +89,7 @@ class FormCriteria
         FormBuilder $builder,
         array $parameters = []
     ) {
+        $this->url        = $url;
         $this->cache      = $cache;
         $this->builder    = $builder;
         $this->request    = $request;
@@ -139,13 +150,13 @@ class FormCriteria
             array_get(
                 $this->parameters,
                 'options.url',
-                $this->builder->getOption('url', 'form/handle/' . array_get($this->parameters, 'key'))
+                $this->url->to($this->builder->getOption('url', 'form/handle/' . array_get($this->parameters, 'key')))
             )
         );
 
         $this->cache->remember(
             'form::' . array_get($this->parameters, 'key'),
-            30,
+            1440,
             function () {
                 return $this->parameters;
             }
@@ -198,7 +209,9 @@ class FormCriteria
 
         $this->builder = $builder;
 
-        array_set($this->parameters, 'builder', get_class($this->builder));
+        if (!isset($this->parameters['builder'])) {
+            array_set($this->parameters, 'builder', get_class($this->builder));
+        }
 
         return $this;
     }

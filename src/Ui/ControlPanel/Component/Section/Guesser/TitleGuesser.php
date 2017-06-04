@@ -9,9 +9,9 @@ use Illuminate\Translation\Translator;
 /**
  * Class TitleGuesser
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class TitleGuesser
 {
@@ -65,6 +65,10 @@ class TitleGuesser
      */
     public function guess(ControlPanelBuilder $builder)
     {
+        if (!$module = $this->modules->active()) {
+            return;
+        }
+        
         $sections = $builder->getSections();
 
         foreach ($sections as &$section) {
@@ -73,8 +77,6 @@ class TitleGuesser
             if (isset($section['title'])) {
                 continue;
             }
-
-            $module = $this->modules->active();
 
             $title = $module->getNamespace('section.' . $section['slug'] . '.title');
 
@@ -89,7 +91,7 @@ class TitleGuesser
             }
 
             if (!isset($section['title']) && $this->config->get('streams::system.lazy_translations')) {
-                $section['title'] = $this->string->humanize($section['slug']);
+                $section['title'] = ucwords($this->string->humanize($section['slug']));
             }
 
             if (!isset($section['title'])) {

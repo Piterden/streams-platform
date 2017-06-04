@@ -3,13 +3,22 @@
 use Anomaly\Streams\Platform\Addon\AddonCollection;
 use Anomaly\Streams\Platform\Addon\Console\Command\PublishConfig;
 use Anomaly\Streams\Platform\Addon\Console\Command\PublishTranslations;
+use Anomaly\Streams\Platform\Addon\Console\Command\PublishViews;
+use Illuminate\Console\Command;
+use Illuminate\Foundation\Bus\DispatchesJobs;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use Illuminate\Foundation\Bus\DispatchesJobs;
-use Illuminate\Console\Command;
 
+/**
+ * Class AddonPublish
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class AddonPublish extends Command
 {
+
     use DispatchesJobs;
 
     /**
@@ -46,6 +55,7 @@ class AddonPublish extends Command
 
         $addon = $addons->get($this->argument('addon'));
 
+        $this->dispatch(new PublishViews($addon, $this));
         $this->dispatch(new PublishConfig($addon, $this));
         $this->dispatch(new PublishTranslations($addon, $this));
     }

@@ -1,13 +1,14 @@
 <?php namespace Anomaly\Streams\Platform\Ui\Form\Component\Field\Guesser;
 
+use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
 use Anomaly\Streams\Platform\Ui\Form\FormBuilder;
 
 /**
  * Class WarningsGuesser
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class WarningsGuesser
 {
@@ -48,13 +49,7 @@ class WarningsGuesser
              * No stream means we can't
              * really do much here.
              */
-            if (!$stream || !$stream->getAssignment($field['field'])) {
-                $warning = "module::field.{$field['field']}.warning";
-
-                if (str_is('*::*', $warning) && trans()->has($warning)) {
-                    $field['warning'] = trans($warning, [], null, $locale);
-                }
-
+            if (!$stream instanceof StreamInterface) {
                 continue;
             }
 

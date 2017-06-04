@@ -3,9 +3,9 @@
 /**
  * Class StreamFormFields
  *
- * @link          http://pyrocms.com/
- * @author        PyroCMS, Inc. <support@pyrocms.com>
- * @author        Ryan Thompson <ryan@pyrocms.com>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class StreamFormFields
 {
@@ -45,7 +45,7 @@ class StreamFormFields
                         'max'     => 60,
                     ],
                     'rules'        => [
-                        'unique' => 'streams_streams,slug,' . $id . ',id,namespace,' . $namespace,
+                        'unique' => 'streams_streams,slug,' . (int)$id . ',id,namespace,' . $namespace,
                     ],
                 ],
                 'description'  => [
@@ -73,19 +73,19 @@ class StreamFormFields
                     'translatable' => true,
                     'type'         => 'anomaly.field_type.boolean',
                 ],
-                'searchable'     => [
+                'searchable'   => [
                     'label'        => 'streams::field.searchable.name',
                     'instructions' => 'streams::field.searchable.instructions',
                     'translatable' => true,
                     'type'         => 'anomaly.field_type.boolean',
                 ],
-                'config'       => [
-                    'label'        => 'streams::field.config.name',
-                    'instructions' => 'streams::field.config.instructions',
-                    'translatable' => true,
-                    'type'         => 'anomaly.field_type.editor',
+                'title_column' => [
+                    'label'        => 'streams::field.title_column.name',
+                    'instructions' => 'streams::field.title_column.instructions',
+                    'type'         => 'anomaly.field_type.slug',
+                    'required'     => true,
                     'config'       => [
-                        'mode' => 'json',
+                        'default_value' => 'id',
                     ],
                 ],
             ]

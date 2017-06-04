@@ -4,6 +4,13 @@ use Anomaly\Streams\Platform\Model\Contract\EloquentRepositoryInterface;
 use Anomaly\Streams\Platform\Model\EloquentCollection;
 use Anomaly\Streams\Platform\Stream\StreamCollection;
 
+/**
+ * Interface StreamRepositoryInterface
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 interface StreamRepositoryInterface extends EloquentRepositoryInterface
 {
 
@@ -15,6 +22,14 @@ interface StreamRepositoryInterface extends EloquentRepositoryInterface
      * @return null|StreamInterface
      */
     public function findBySlugAndNamespace($slug, $namespace);
+
+    /**
+     * Find all streams by their searchable flag.
+     *
+     * @param $searchable
+     * @return StreamCollection
+     */
+    public function findAllBySearchable($searchable);
 
     /**
      * Find all streams in a namespace.

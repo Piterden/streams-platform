@@ -8,9 +8,9 @@ use Closure;
 /**
  * Class SearchFilter
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class SearchFilter extends Filter implements SearchFilterInterface
 {
@@ -49,7 +49,7 @@ class SearchFilter extends Filter implements SearchFilterInterface
             $this->getValue(),
             [
                 'class'       => 'form-control',
-                'placeholder' => trans('streams::message.search'),
+                'placeholder' => trans($this->getPlaceholder()),
             ]
         );
     }

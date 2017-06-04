@@ -6,9 +6,9 @@ use Illuminate\Support\Collection;
 /**
  * Class SectionCollection
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class SectionCollection extends Collection
 {
@@ -42,6 +42,23 @@ class SectionCollection extends Collection
                 $this->all(),
                 function (SectionInterface $section) {
                     return !$section->isSubSection();
+                }
+            )
+        );
+    }
+
+    /**
+     * Return only visible sections.
+     *
+     * @return SectionCollection
+     */
+    public function visible()
+    {
+        return self::make(
+            array_filter(
+                $this->all(),
+                function (SectionInterface $section) {
+                    return !$section->isHidden();
                 }
             )
         );

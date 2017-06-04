@@ -7,12 +7,19 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * Class FieldTableBuilder
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class FieldTableBuilder extends TableBuilder
 {
+
+    /**
+     * The locked flag.
+     *
+     * @var bool
+     */
+    protected $locked = false;
 
     /**
      * The related stream instance.
@@ -106,9 +113,34 @@ class FieldTableBuilder extends TableBuilder
      */
     public function onQuerying(Builder $query)
     {
-        $query
-            ->where('namespace', $this->getStream() ? $this->getStreamNamespace() : $this->getNamespace())
-            ->where('locked', 'false');
+        $query->where('namespace', $this->getStream() ? $this->getStreamNamespace() : $this->getNamespace());
+
+        if (($locked = $this->getLocked()) !== null) {
+            $query->where('locked', $locked);
+        }
+    }
+
+    /**
+     * Get the lock flag.
+     *
+     * @return bool
+     */
+    public function getLocked()
+    {
+        return $this->locked;
+    }
+
+    /**
+     * Set the lock flag.
+     *
+     * @param $locked
+     * @return $this
+     */
+    public function setLocked($locked)
+    {
+        $this->locked = $locked;
+
+        return $this;
     }
 
     /**

@@ -4,15 +4,15 @@ use Anomaly\Streams\Platform\Addon\AddonManager;
 use Anomaly\Streams\Platform\Addon\Extension\Contract\ExtensionRepositoryInterface;
 use Anomaly\Streams\Platform\Addon\Extension\Event\ExtensionWasInstalled;
 use Anomaly\Streams\Platform\Addon\Extension\Extension;
-use Illuminate\Contracts\Console\Kernel;
+use Anomaly\Streams\Platform\Console\Kernel;
 use Illuminate\Contracts\Events\Dispatcher;
 
 /**
  * Class InstallExtension
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class InstallExtension
 {

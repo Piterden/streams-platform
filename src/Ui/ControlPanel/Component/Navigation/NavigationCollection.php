@@ -6,9 +6,9 @@ use Anomaly\Streams\Platform\Ui\ControlPanel\Component\Navigation\Contract\Navig
 /**
  * Class NavigationCollection
  *
- * @link          http://pyrocms.com/
- * @author        PyroCMS, Inc. <support@pyrocms.com>
- * @author        Ryan Thompson <ryan@pyrocms.com>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class NavigationCollection extends Collection
 {
@@ -33,8 +33,8 @@ class NavigationCollection extends Collection
     /**
      * Get a navigation link.
      *
-     * @param  mixed                   $key
-     * @param  null                    $default
+     * @param  mixed $key
+     * @param  null  $default
      * @return NavigationLinkInterface
      */
     public function get($key, $default = null)
@@ -47,41 +47,5 @@ class NavigationCollection extends Collection
         }
 
         return $default ? $this->get($default) : null;
-    }
-
-    /**
-     * Return only main.
-     *
-     * @return NavigationCollection
-     */
-    public function main()
-    {
-        $main = config('streams::navigation.main', []);
-
-        if (!$main) {
-            return $this->splice(0, 5);
-        }
-
-        foreach ($main as &$link) {
-            $link = $this->get($link);
-        }
-
-        return $this->make(array_filter($main));
-    }
-
-    /**
-     * Return the home link.
-     *
-     * @return NavigationLinkInterface|null
-     */
-    public function home()
-    {
-        $main = $this->main();
-
-        if ($main->isEmpty()) {
-            return $this->first();
-        }
-
-        return $main->first();
     }
 }

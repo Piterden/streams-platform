@@ -5,9 +5,9 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 /**
  * Class Presenter
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class Presenter extends \Robbo\Presenter\Presenter
 {
@@ -53,6 +53,11 @@ class Presenter extends \Robbo\Presenter\Presenter
         // Check the presenter for a getter.
         if (method_exists($this, camel_case('get_' . $var))) {
             return call_user_func_array([$this, camel_case('get_' . $var)], []);
+        }
+
+        // Check the presenter for a getter.
+        if (method_exists($this, camel_case('is_' . $var))) {
+            return call_user_func_array([$this, camel_case('is_' . $var)], []);
         }
 
         // Check the presenter for a method.

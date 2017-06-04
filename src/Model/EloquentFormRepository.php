@@ -4,6 +4,13 @@ use Anomaly\Streams\Platform\Addon\FieldType\FieldType;
 use Anomaly\Streams\Platform\Ui\Form\Contract\FormRepositoryInterface;
 use Anomaly\Streams\Platform\Ui\Form\FormBuilder;
 
+/**
+ * Class EloquentFormRepository
+ *
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
+ */
 class EloquentFormRepository implements FormRepositoryInterface
 {
 
@@ -45,12 +52,24 @@ class EloquentFormRepository implements FormRepositoryInterface
         $entry = $builder->getFormEntry();
 
         $data = $this->prepareValueData($builder);
-        
+
+        $entry->unguard();
+
+        $builder->fire('querying', compact('builder'));
+
+        /**
+         * Update OR create the entry.
+         * Keep this as is or we will
+         * have issues with post relations
+         * in following observer logic.
+         */
         if ($entry->getId()) {
             $entry->update($data);
         } else {
             $entry = $entry->create($data);
         }
+
+        $entry->reguard();
 
         $builder->setFormEntry($entry);
 
@@ -80,7 +99,7 @@ class EloquentFormRepository implements FormRepositoryInterface
         $data = array_diff_key(
             $entry->getUnguardedAttributes(),
             array_merge(
-                ['id', 'created_at', 'created_by', 'updated_at', 'updated_by'],
+                ['id', 'created_at', 'created_by_id', 'updated_at', 'updated_by_id'],
                 array_flip($disabled->fieldSlugs())
             )
         );

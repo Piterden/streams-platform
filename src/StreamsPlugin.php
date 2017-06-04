@@ -1,6 +1,7 @@
 <?php namespace Anomaly\Streams\Platform;
 
 use Anomaly\Streams\Platform\Addon\AddonCollection;
+use Anomaly\Streams\Platform\Addon\FieldType\FieldTypePresenter;
 use Anomaly\Streams\Platform\Addon\Plugin\Plugin;
 use Anomaly\Streams\Platform\Asset\Asset;
 use Anomaly\Streams\Platform\Entry\Command\GetEntryCriteria;
@@ -8,11 +9,15 @@ use Anomaly\Streams\Platform\Image\Command\MakeImagePath;
 use Anomaly\Streams\Platform\Image\Command\MakeImageTag;
 use Anomaly\Streams\Platform\Image\Command\MakeImageUrl;
 use Anomaly\Streams\Platform\Image\Image;
+use Anomaly\Streams\Platform\Model\Command\GetEloquentCriteria;
+use Anomaly\Streams\Platform\Routing\UrlGenerator;
 use Anomaly\Streams\Platform\Stream\Command\GetStream;
 use Anomaly\Streams\Platform\Stream\Command\GetStreams;
+use Anomaly\Streams\Platform\Support\Currency;
 use Anomaly\Streams\Platform\Support\Decorator;
 use Anomaly\Streams\Platform\Support\Str;
 use Anomaly\Streams\Platform\Support\Template;
+use Anomaly\Streams\Platform\Ui\Breadcrumb\BreadcrumbCollection;
 use Anomaly\Streams\Platform\Ui\Button\Command\GetButtons;
 use Anomaly\Streams\Platform\Ui\Command\GetElapsedTime;
 use Anomaly\Streams\Platform\Ui\Command\GetMemoryUsage;
@@ -25,19 +30,20 @@ use Anomaly\Streams\Platform\View\Command\GetView;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Config\Repository;
-use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Session\Store;
 use Illuminate\Translation\Translator;
 use Jenssegers\Agent\Agent;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Class StreamsPlugin
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class StreamsPlugin extends Plugin
 {
@@ -62,6 +68,13 @@ class StreamsPlugin extends Plugin
      * @var Guard
      */
     protected $auth;
+
+    /**
+     * The YAML parser.
+     *
+     * @var Yaml
+     */
+    protected $yaml;
 
     /**
      * The agent utility.
@@ -92,6 +105,13 @@ class StreamsPlugin extends Plugin
     protected $image;
 
     /**
+     * The active route.
+     *
+     * @var Route
+     */
+    protected $route;
+
+    /**
      * The router service.
      *
      * @var Router
@@ -111,6 +131,13 @@ class StreamsPlugin extends Plugin
      * @var Store
      */
     protected $session;
+
+    /**
+     * The currency utility.
+     *
+     * @var Currency
+     */
+    protected $currency;
 
     /**
      * The template parser.
@@ -139,12 +166,15 @@ class StreamsPlugin extends Plugin
      * @param Repository   $config
      * @param Request      $request
      * @param Store        $session
+     * @param Currency     $currency
      * @param Template     $template
+     * @param Translator   $translator
      */
     public function __construct(
         UrlGenerator $url,
         Str $str,
         Guard $auth,
+        Yaml $yaml,
         Agent $agent,
         Asset $asset,
         Image $image,
@@ -152,19 +182,26 @@ class StreamsPlugin extends Plugin
         Repository $config,
         Request $request,
         Store $session,
-        Template $template
+        Currency $currency,
+        Template $template,
+        Translator $translator
     ) {
-        $this->url      = $url;
-        $this->str      = $str;
-        $this->auth     = $auth;
-        $this->agent    = $agent;
-        $this->asset    = $asset;
-        $this->image    = $image;
-        $this->router   = $router;
-        $this->config   = $config;
-        $this->request  = $request;
-        $this->session  = $session;
-        $this->template = $template;
+        $this->url        = $url;
+        $this->str        = $str;
+        $this->auth       = $auth;
+        $this->yaml       = $yaml;
+        $this->agent      = $agent;
+        $this->asset      = $asset;
+        $this->image      = $image;
+        $this->router     = $router;
+        $this->config     = $config;
+        $this->request    = $request;
+        $this->session    = $session;
+        $this->currency   = $currency;
+        $this->template   = $template;
+        $this->translator = $translator;
+
+        $this->route = $request->route();
     }
 
     /**
@@ -204,6 +241,14 @@ class StreamsPlugin extends Plugin
                 function ($namespace, $stream = null) {
                     return (new Decorator())->decorate(
                         $this->dispatch(new GetEntryCriteria($namespace, $stream ?: $namespace, 'get'))
+                    );
+                }
+            ),
+            new \Twig_SimpleFunction(
+                'query',
+                function ($model = null) {
+                    return (new Decorator())->decorate(
+                        $this->dispatch(new GetEloquentCriteria($model, 'get'))
                     );
                 }
             ),
@@ -363,6 +408,14 @@ class StreamsPlugin extends Plugin
                 }
             ),
             new \Twig_SimpleFunction(
+                'route_*',
+                function ($name) {
+                    $arguments = array_slice(func_get_args(), 1);
+
+                    return call_user_func_array([$this->route, camel_case($name)], $arguments);
+                }
+            ),
+            new \Twig_SimpleFunction(
                 'asset_*',
                 function ($name) {
                     $arguments = array_slice(func_get_args(), 1);
@@ -371,9 +424,28 @@ class StreamsPlugin extends Plugin
                 }, ['is_safe' => ['html']]
             ),
             new \Twig_SimpleFunction(
+                'currency_*',
+                function ($name) {
+                    $arguments = array_slice(func_get_args(), 1);
+
+                    return call_user_func_array([$this->currency, camel_case($name)], $arguments);
+                }
+            ),
+            new \Twig_SimpleFunction(
+                'yaml',
+                function ($input) {
+
+                    if ($input instanceof FieldTypePresenter) {
+                        $input = $input->__toString();
+                    }
+
+                    return $this->yaml->parse($input);
+                }
+            ),
+            new \Twig_SimpleFunction(
                 'addon',
                 function ($identifier) {
-                    return app(AddonCollection::class)->get($identifier);
+                    return (new Decorator())->decorate(app(AddonCollection::class)->get($identifier));
                 }
             ),
             new \Twig_SimpleFunction(
@@ -385,7 +457,30 @@ class StreamsPlugin extends Plugin
                         $addons = $addons->{str_plural($type)}();
                     }
 
-                    return $addons;
+                    return (new Decorator())->decorate($addons);
+                }
+            ),
+            new \Twig_SimpleFunction(
+                'breadcrumb',
+                function () {
+                    return app(BreadcrumbCollection::class);
+                }, ['is_safe' => ['html']]
+            ),
+            new \Twig_SimpleFunction(
+                'gravatar',
+                function ($email, array $parameters = []) {
+                    return $this->image->make(
+                        'https://www.gravatar.com/avatar/' . md5($email) . '?' . http_build_query(
+                            $parameters
+                        ),
+                        'image'
+                    );
+                }, ['is_safe' => ['html']]
+            ),
+            new \Twig_SimpleFunction(
+                'cookie',
+                function ($key, $default = null) {
+                    return array_get($_COOKIE, $key, $default);
                 }
             ),
             new \Twig_SimpleFunction('input_get', [$this->request, 'input']),
@@ -403,6 +498,7 @@ class StreamsPlugin extends Plugin
             new \Twig_SimpleFunction('auth_check', [$this->auth, 'check']),
             new \Twig_SimpleFunction('auth_guest', [$this->auth, 'guest']),
             new \Twig_SimpleFunction('trans_exists', [$this->translator, 'exists']),
+            new \Twig_SimpleFunction('trans_choice', [$this->translator, 'choice']),
             new \Twig_SimpleFunction('message_get', [$this->session, 'pull']),
             new \Twig_SimpleFunction('message_exists', [$this->session, 'has']),
             new \Twig_SimpleFunction('session', [$this->session, 'get']),
@@ -447,11 +543,24 @@ class StreamsPlugin extends Plugin
     }
 
     /**
+     * Returns a list of global variables
+     * to add to the existing variables.
+     *
+     * @return array
+     */
+    public function getGlobals()
+    {
+        return [
+            'app' => app(),
+        ];
+    }
+
+    /**
      * Return a URL.
      *
-     * @param  null   $path
-     * @param  array  $parameters
-     * @param  null   $secure
+     * @param  null  $path
+     * @param  array $parameters
+     * @param  null  $secure
      * @return string
      */
     public function url($path = null, $parameters = [], $secure = null)

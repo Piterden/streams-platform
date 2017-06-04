@@ -5,9 +5,9 @@ use Anomaly\Streams\Platform\Ui\Form\FormBuilder;
 /**
  * Class ActionNormalizer
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class ActionNormalizer
 {
@@ -85,6 +85,13 @@ class ActionNormalizer
             $action['action'] = $slug;
         }
 
+        /**
+         * Default to size "sm"
+         */
+        if (!isset($action['size'])) {
+            $action['size'] = 'sm';
+        }
+
         /*
          * Make sure the attributes array is set.
          */
@@ -118,11 +125,6 @@ class ActionNormalizer
         ) {
             $action['redirect'] = url($action['redirect']);
         }
-
-        /*
-         * Set defaults as expected for actions.
-         */
-        $action['size'] = 'sm';
 
         $action['attributes']['name']  = $prefix . 'action';
         $action['attributes']['value'] = $action['slug'];

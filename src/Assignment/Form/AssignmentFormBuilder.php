@@ -9,9 +9,9 @@ use Anomaly\Streams\Platform\Ui\Form\FormBuilder;
 /**
  * Class AssignmentFormBuilder
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class AssignmentFormBuilder extends FormBuilder
 {
@@ -44,17 +44,28 @@ class AssignmentFormBuilder extends FormBuilder
      */
     protected $fields = AssignmentFormFields::class;
 
-    /**
-     * The form buttons.
-     *
-     * @var array
-     */
-    protected $actions = [
-        'save'   => [
-            'enabled' => 'create',
-        ],
-        'update' => [
-            'enabled' => 'edit',
+    protected $sections = [
+        'general' => [
+            'tabs' => [
+                'assignment' => [
+                    'title'  => 'streams::form.tab.display',
+                    'fields' => [
+                        'label',
+                        'placeholder',
+                        'instructions',
+                        'warning',
+                    ],
+                ],
+                'options'    => [
+                    'title'  => 'streams::form.tab.options',
+                    'fields' => [
+                        'required',
+                        'unique',
+                        'searchable',
+                        'translatable',
+                    ],
+                ],
+            ],
         ],
     ];
 

@@ -3,6 +3,7 @@
 
         {{ form_open({'method': 'get', 'id': 'filters', 'url': url_full(), 'class': 'ajax form-inline'}) }}
         <input type="hidden" name="{{ table.options.prefix }}view" value="{{ table.views.active().getSlug() }}">
+        <input type="hidden" name="{{ table.options.prefix }}page" value="">
 
         {% for filter in table.filters %}
             <div class="form-group">
@@ -14,7 +15,7 @@
             {{ icon(table.options.filters.filter_icon ?: 'filter') }}
             {{ trans(table.options.filters.filter_text ?: 'streams::button.filter') }}
         </button>
-        <a href="{{ url_current() }}" class="btn btn-default ajax">
+        <a href="{{ url_current() }}" class="btn btn-inverse ajax">
             {{ icon(table.options.filters.clear_icon ? table.options.filters.clear_icon) }}
             {{ trans(table.options.filters.clear_text ?: 'streams::button.clear') }}
         </a>

@@ -7,9 +7,9 @@ use Illuminate\Contracts\Container\Container;
 /**
  * Class AddAssetNamespaces
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class AddAssetNamespaces
 {
@@ -19,12 +19,15 @@ class AddAssetNamespaces
      */
     public function handle(Asset $asset, Container $container, Application $application)
     {
+        $asset->setDirectory(public_path());
+
         $asset->addPath('public', public_path());
         $asset->addPath('node', base_path('node_modules'));
         $asset->addPath('asset', $application->getAssetsPath());
         $asset->addPath('storage', $application->getStoragePath());
+        $asset->addPath('resources', $application->getResourcesPath());
         $asset->addPath('download', $application->getAssetsPath('assets/downloads'));
         $asset->addPath('streams', $container->make('streams.path') . '/resources');
-        $asset->addPath('bower', $container->make('path.base') . '/bin/bower_components');
+        $asset->addPath('bower', $container->make('path.base') . '/bower_components');
     }
 }

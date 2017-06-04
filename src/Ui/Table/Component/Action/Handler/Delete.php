@@ -7,9 +7,9 @@ use Anomaly\Streams\Platform\Ui\Table\TableBuilder;
 /**
  * Class DeleteActionHandler
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class Delete extends ActionHandler
 {
@@ -28,9 +28,16 @@ class Delete extends ActionHandler
 
         /* @var EloquentModel $entry */
         foreach ($selected as $id) {
+
             $entry = $model->find($id);
 
-            if ($entry && $entry->isDeletable() && $entry->delete()) {
+            $deletable = true;
+
+            if ($entry instanceof EloquentModel) {
+                $deletable = $entry->isDeletable();
+            }
+
+            if ($entry && $deletable && $entry->delete()) {
                 $builder->fire('row_deleted', compact('builder', 'model', 'entry'));
 
                 $count++;

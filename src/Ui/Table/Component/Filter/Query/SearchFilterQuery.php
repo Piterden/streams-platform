@@ -1,5 +1,6 @@
 <?php namespace Anomaly\Streams\Platform\Ui\Table\Component\Filter\Query;
 
+use Anomaly\Streams\Platform\Model\EloquentModel;
 use Anomaly\Streams\Platform\Model\EloquentQueryBuilder;
 use Anomaly\Streams\Platform\Ui\Table\Component\Filter\Contract\SearchFilterInterface;
 use Anomaly\Streams\Platform\Ui\Table\TableBuilder;
@@ -9,9 +10,9 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * Class SearchFilterQuery
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class SearchFilterQuery
 {
@@ -49,9 +50,13 @@ class SearchFilterQuery
          * join it's translations so they
          * are filterable too.
          *
-         * @var EloquentQueryBuilder $query
+         * @var EloquentQueryBuilder|\Illuminate\Database\Query\Builder $query
          */
-        if ($model->getTranslationModelName() && !$query->hasJoin($model->getTranslationTableName())) {
+        if (
+            $model instanceof EloquentModel &&
+            $model->getTranslationModelName() &&
+            !$query->hasJoin($model->getTranslationTableName())
+        ) {
             $query->leftJoin(
                 $model->getTranslationTableName(),
                 $model->getTableName() . '.id',
@@ -62,6 +67,7 @@ class SearchFilterQuery
 
         $query->where(
             function (Builder $query) use ($filter, $stream) {
+
                 foreach ($filter->getColumns() as $column) {
                     $query->orWhere($column, 'LIKE', "%{$filter->getValue()}%");
                 }

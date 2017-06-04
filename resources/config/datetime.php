@@ -11,7 +11,7 @@ return [
     |
     */
 
-    'date_format' => env('DATE_FORMAT', 'j F, Y'),
+    'date_format' => env('DATE_FORMAT', 'm/d/Y'),
     'time_format' => env('TIME_FORMAT', 'g:i A'),
 
     /*
@@ -26,6 +26,6 @@ return [
     |
     */
 
-    'default_timezone'  => env('DEFAULT_TIMEZONE', 'UTC'),
-    'database_timezone' => env('DATABASE_TIMEZONE', 'UTC'),
+    'default_timezone'  => env('DEFAULT_TIMEZONE', date_default_timezone_get()),
+    'database_timezone' => env('DATABASE_TIMEZONE', date_default_timezone_get()),
 ];

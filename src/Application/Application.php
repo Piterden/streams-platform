@@ -5,13 +5,28 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 /**
  * Class Application
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class Application
 {
+
     use DispatchesJobs;
+
+    /**
+     * The application locale.
+     *
+     * @var string
+     */
+    protected $locale = null;
+
+    /**
+     * The enabled state of the application.
+     *
+     * @var bool
+     */
+    protected $enabled = null;
 
     /**
      * Keep installed status around.
@@ -138,18 +153,41 @@ class Application
      */
     public function locate()
     {
-        if (app('db')->getSchemaBuilder()->hasTable('applications')) {
-            if ($app = $this->applications->findByDomain(app('request')->root())) {
-                $this->installed = true;
-                $this->reference = $app->reference;
+        if ($app = $this->applications->findByDomain(app('request')->root())) {
 
-                return true;
-            }
+            $this->installed = true;
+            $this->locale    = $app->locale;
+            $this->enabled   = $app->enabled;
+            $this->reference = $app->reference;
 
-            return false;
+            return true;
         }
 
-        return true;
+        return false;
+    }
+
+    /**
+     * Get the resolved locale.
+     *
+     * @return string
+     */
+    public function getLocale()
+    {
+        return $this->locale;
+    }
+
+    /**
+     * Return if the application is enabled.
+     *
+     * @return bool
+     */
+    public function isEnabled()
+    {
+        if (is_null($this->enabled)) {
+            return true;
+        }
+
+        return $this->enabled;
     }
 
     /**

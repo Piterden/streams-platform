@@ -16,10 +16,15 @@ return [
     'type'         => [
         'name'         => 'Field Type',
         'instructions' => 'What field type do you want to use for this field?',
+        'warning'      => 'Changing this value will result in an immediate page reload.',
     ],
     'placeholder'  => [
         'name'         => 'Placeholder',
         'instructions' => 'If supported, placeholders will display in the input when no input has been entered.',
+    ],
+    'title_column' => [
+        'name'         => 'Title Column',
+        'instructions' => 'Specify the field slug that acts as a title?',
     ],
     'instructions' => [
         'name'         => 'Instructions',
@@ -42,7 +47,7 @@ return [
         'name'         => 'Sortable',
         'instructions' => 'Are the entries in this stream manually sortable?',
     ],
-    'searchable'     => [
+    'searchable'   => [
         'name'         => 'Searchable',
         'instructions' => 'Are the entries in this stream searchable?',
     ],

@@ -5,9 +5,9 @@ use Anomaly\Streams\Platform\Addon\Addon;
 /**
  * Class Theme
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class Theme extends Addon
 {
@@ -100,6 +100,6 @@ class Theme extends Addon
      */
     public function getPresenter()
     {
-        return app()->make('Anomaly\Streams\Platform\Addon\Theme\ThemePresenter', ['object' => $this]);
+        return app()->makeWith('Anomaly\Streams\Platform\Addon\Theme\ThemePresenter', ['object' => $this]);
     }
 }

@@ -4,15 +4,15 @@ use Anomaly\Streams\Platform\Addon\AddonManager;
 use Anomaly\Streams\Platform\Addon\Module\Contract\ModuleRepositoryInterface;
 use Anomaly\Streams\Platform\Addon\Module\Event\ModuleWasInstalled;
 use Anomaly\Streams\Platform\Addon\Module\Module;
-use Illuminate\Contracts\Console\Kernel;
+use Anomaly\Streams\Platform\Console\Kernel;
 use Illuminate\Contracts\Events\Dispatcher;
 
 /**
  * Class InstallModule
  *
- * @link    http://anomaly.is/streams-platform
- * @author  AnomalyLabs, Inc. <hello@anomaly.is>
- * @author  Ryan Thompson <ryan@anomaly.is>
+ * @link    http://pyrocms.com/
+ * @author  PyroCMS, Inc. <support@pyrocms.com>
+ * @author  Ryan Thompson <ryan@pyrocms.com>
  */
 class InstallModule
 {
@@ -67,9 +67,9 @@ class InstallModule
 
         $console->call('migrate:refresh', $options);
 
-        $manager->register();
-
         $modules->install($this->module);
+
+        $manager->register();
 
         if ($this->seed) {
             $console->call('db:seed', $options);

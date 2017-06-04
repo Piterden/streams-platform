@@ -6,9 +6,9 @@ use IteratorAggregate;
 /**
  * Class Decorator
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class Decorator extends \Robbo\Presenter\Decorator
 {
@@ -25,9 +25,9 @@ class Decorator extends \Robbo\Presenter\Decorator
             return $value->getObject();
         }
 
-        if (is_array($value) or ($value instanceof IteratorAggregate and $value instanceof ArrayAccess)) {
+        if (is_array($value) || ($value instanceof IteratorAggregate && $value instanceof ArrayAccess)) {
             foreach ($value as $k => $v) {
-                $value[$k] = $this->decorate($v);
+                $value[$k] = $this->undecorate($v);
             }
         }
 

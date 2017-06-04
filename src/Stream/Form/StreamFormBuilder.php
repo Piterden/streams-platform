@@ -6,9 +6,9 @@ use Anomaly\Streams\Platform\Ui\Form\FormBuilder;
 /**
  * Class StreamFormBuilder
  *
- * @link          http://anomaly.is/streams-platform
- * @author        AnomalyLabs, Inc. <hello@anomaly.is>
- * @author        Ryan Thompson <ryan@anomaly.is>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class StreamFormBuilder extends FormBuilder
 {
@@ -46,9 +46,9 @@ class StreamFormBuilder extends FormBuilder
      */
     public function onMake()
     {
-        $editor = $this->getFormField('config');
-
-        $editor->setValue(json_encode($editor->getValue(), JSON_PRETTY_PRINT));
+        if ($editor = $this->getFormField('config')) {
+            $editor->setValue(json_encode($editor->getValue(), JSON_PRETTY_PRINT));
+        }
     }
 
     /**
@@ -66,9 +66,9 @@ class StreamFormBuilder extends FormBuilder
             $entry->namespace = $namespace;
         }
 
-        $editor = $this->getFormField('config');
-
-        $this->setFormValue('config', json_decode($editor->getValue(), true));
+        if ($editor = $this->getFormField('config')) {
+            $this->setFormValue('config', json_decode($editor->getValue(), true));
+        }
     }
 
     /**

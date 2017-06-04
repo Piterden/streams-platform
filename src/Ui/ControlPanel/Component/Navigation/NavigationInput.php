@@ -5,12 +5,19 @@ use Anomaly\Streams\Platform\Ui\ControlPanel\ControlPanelBuilder;
 /**
  * Class NavigationInput
  *
- * @link          http://pyrocms.com/
- * @author        PyroCMS, Inc. <support@pyrocms.com>
- * @author        Ryan Thompson <ryan@pyrocms.com>
+ * @link   http://pyrocms.com/
+ * @author PyroCMS, Inc. <support@pyrocms.com>
+ * @author Ryan Thompson <ryan@pyrocms.com>
  */
 class NavigationInput
 {
+
+    /**
+     * The navigation sorter.
+     *
+     * @var NavigationSorter
+     */
+    protected $sorter;
 
     /**
      * The navigation resolver.
@@ -36,15 +43,18 @@ class NavigationInput
     /**
      * Create a new NavigationInput instance.
      *
+     * @param NavigationSorter     $sorter
      * @param NavigationResolver   $resolver
      * @param NavigationEvaluator  $evaluator
      * @param NavigationNormalizer $normalizer
      */
     public function __construct(
+        NavigationSorter $sorter,
         NavigationResolver $resolver,
         NavigationEvaluator $evaluator,
         NavigationNormalizer $normalizer
     ) {
+        $this->sorter     = $sorter;
         $this->resolver   = $resolver;
         $this->evaluator  = $evaluator;
         $this->normalizer = $normalizer;
@@ -60,5 +70,6 @@ class NavigationInput
         $this->resolver->resolve($builder);
         $this->evaluator->evaluate($builder);
         $this->normalizer->normalize($builder);
+        $this->sorter->sort($builder);
     }
 }
