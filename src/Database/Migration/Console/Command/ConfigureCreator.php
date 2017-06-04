@@ -61,17 +61,29 @@ class ConfigureCreator
      */
     public function handle()
     {
-        if (!$addon = $this->input->getOption('addon')) {
+        if (!$this->input->hasOption('addon')) {
             return;
         }
+
+        if (!$this->input->hasArgument('name')) {
+            return;
+        }
+
+        $addon = $this->input->getOption('addon');
 
         if (!$addon = $this->dispatch(new GetAddon($addon))) {
             throw new \Exception("Addon could not be found.");
         }
 
-        $this->input->setArgument('name', $addon->getNamespace() . '__' . $this->input->getArgument('name'));
+        $this->input->setArgument(
+            'name',
+            $addon->getNamespace() . '__' . $this->input->getArgument('name')
+        );
 
-        $this->input->setOption('path', $addon->getAppPath('migrations'));
+        $this->input->setOption(
+            'path',
+            $addon->getAppPath('migrations')
+        );
 
         if (!is_dir($directory = $addon->getPath('migrations'))) {
             mkdir($directory);
