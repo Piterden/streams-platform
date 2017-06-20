@@ -47,7 +47,7 @@ class Install extends Command
         }
 
         if ($extension->isInstalled()) {
-            throw new \Exception('The [' . $this->argument('addon') . '] extension is already installed.');
+            return;
         }
 
         $manager->install($extension, $this->option('seed'));
