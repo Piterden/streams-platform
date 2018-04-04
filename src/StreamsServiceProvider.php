@@ -172,6 +172,7 @@ class StreamsServiceProvider extends ServiceProvider
         'Anomaly\Streams\Platform\Addon\Theme\Listener\PutThemeInCollection'                 => 'Anomaly\Streams\Platform\Addon\Theme\Listener\PutThemeInCollection',
         'Anomaly\Streams\Platform\View\ViewComposer'                                         => 'Anomaly\Streams\Platform\View\ViewComposer',
         'Anomaly\Streams\Platform\View\ViewTemplate'                                         => 'Anomaly\Streams\Platform\View\ViewTemplate',
+        'Anomaly\Streams\Platform\View\ViewIncludes'                                         => 'Anomaly\Streams\Platform\View\ViewIncludes',
         'Anomaly\Streams\Platform\View\ViewOverrides'                                        => 'Anomaly\Streams\Platform\View\ViewOverrides',
         'Anomaly\Streams\Platform\View\ViewMobileOverrides'                                  => 'Anomaly\Streams\Platform\View\ViewMobileOverrides',
         'Anomaly\Streams\Platform\View\Listener\LoadTemplateData'                            => 'Anomaly\Streams\Platform\View\Listener\LoadTemplateData',
@@ -270,6 +271,14 @@ class StreamsServiceProvider extends ServiceProvider
 
                 $manager->register();
 
+                /**
+                 * Load again in case anything has
+                 * changed during registration.
+                 */
+                if (config('app.debug')) {
+                    $this->app->register(\Barryvdh\Debugbar\ServiceProvider::class);
+                }
+
                 $this->dispatch(new LoadCurrentTheme());
                 $this->dispatch(new AddViewNamespaces());
 
@@ -299,8 +308,13 @@ class StreamsServiceProvider extends ServiceProvider
         $this->app->register(\Intervention\Image\ImageServiceProvider::class);
         $this->app->register(\TeamTNT\Scout\TNTSearchScoutServiceProvider::class);
 
-        if (env('APP_DEBUG')) {
-            $this->app->register(\Barryvdh\Debugbar\ServiceProvider::class);
+        // Register debuggers.
+        if (config('app.debug')) {
+            $this->app->registerDeferredProvider(\Barryvdh\Debugbar\ServiceProvider::class);
+        }
+
+        if (env('APP_ENV') !== 'production' && class_exists(\Laravel\Tinker\TinkerServiceProvider::class)) {
+            $this->app->registerDeferredProvider(\Laravel\Tinker\TinkerServiceProvider::class);
         }
 
         // Register bindings.
