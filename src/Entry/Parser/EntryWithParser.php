@@ -1,33 +1,33 @@
 <?php namespace Anomaly\Streams\Platform\Entry\Parser;
 
+use Anomaly\Streams\Platform\Assignment\Contract\AssignmentInterface;
 use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
 
 /**
- * Class EntryFieldSlugsParser
+ * Class EntryWithParser
  *
  * @link    http://pyrocms.com/
  * @author  PyroCMS, Inc. <support@pyrocms.com>
  * @author  Ryan Thompson <ryan@pyrocms.com>
  */
-class EntryFieldSlugsParser
+class EntryWithParser
 {
 
     /**
-     * Return the entry model base namespace.
+     * Parse the relation methods.
      *
      * @param  StreamInterface $stream
      * @return string
      */
     public function parse(StreamInterface $stream)
     {
-        $string = "[";
+        $relationships = [];
 
-        foreach ($stream->getAssignmentFieldSlugs() as $slug) {
-            $string .= "\n        '{$slug}',";
+        if ($stream->isTranslatable()) {
+            $relationships[] = '"translations"';
         }
 
-        $string .= "\n]";
-
-        return $string;
+        return '[' . implode(', ', $relationships) . ']';
     }
+
 }

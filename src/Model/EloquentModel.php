@@ -89,6 +89,13 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
     protected $cascades = [];
 
     /**
+     * The restricting delete-able relations.
+     *
+     * @var array
+     */
+    protected $restricts = [];
+
+    /**
      * Runtime cache.
      *
      * @var array
@@ -121,11 +128,20 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
      *
      * @param $key
      * @param $ttl
-     * @param $value
+     * @param null $value
      * @return mixed
      */
-    public function cache($key, $ttl, $value)
+    public function cache($key, $ttl, $value = null)
     {
+        if (!$value) {
+            $value = $ttl;
+            $ttl   = 60 * 24 * 360; // Forever-ish
+        }
+
+        if (!config('streams::system.cache_enabled', false)) {
+            return value($value);
+        }
+
         (new CacheCollection())
             ->make([$key])
             ->setKey($this->getCacheCollectionKey())
@@ -133,7 +149,7 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
 
         return app('cache')->remember(
             $key,
-            $ttl ?: $this->getTtl(),
+            $ttl,
             $value
         );
     }
@@ -350,7 +366,7 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
      * Set an attribute.
      *
      * @param  string $key
-     * @param  mixed  $value
+     * @param  mixed $value
      * @return $this
      */
     public function setAttribute($key, $value)
@@ -543,10 +559,7 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
      */
     public function toArray()
     {
-        $attributes = array_merge(
-            $this->attributesToArray(),
-            $this->relationsToArray()
-        );
+        $attributes = $this->attributesToArray();
 
         foreach ($this->translatedAttributes as $field) {
             if ($translation = $this->getTranslation()) {
@@ -555,6 +568,19 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
         }
 
         return $attributes;
+    }
+
+    /**
+     * Return the model as an array with relations.
+     *
+     * @return array
+     */
+    public function toArrayWithRelations()
+    {
+        return array_merge(
+            $this->toArray(),
+            $this->relationsToArray()
+        );
     }
 
     /**
@@ -614,6 +640,16 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
     }
 
     /**
+     * Get the restricting actions.
+     *
+     * @return array
+     */
+    public function getRestricts()
+    {
+        return $this->restricts;
+    }
+
+    /**
      * Check hooks for the missing key.
      *
      * @param string $key
@@ -632,7 +668,7 @@ class EloquentModel extends Model implements Arrayable, PresentableInterface
      * Check hooks for the missing method.
      *
      * @param string $method
-     * @param array  $parameters
+     * @param array $parameters
      * @return mixed
      */
     public function __call($method, $parameters)
